@@ -1,26 +1,25 @@
 "use server";
 
 import { z } from "zod";
-import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { db } from "@/db";
-import { user } from "@/modules/auth/schema";
 import { assertAdmin } from "@/server/session";
 import { f, formObject, toActionError, type ActionState } from "@/lib/action";
 import { currency, email } from "@/lib/validators";
 import { toMinor } from "@/lib/money";
 import { CommerceError } from "@/lib/errors";
+import { invalidate, CacheTags } from "@/lib/cache";
 import * as products from "@/modules/product/service";
 import * as inventory from "@/modules/inventory/service";
 import * as orders from "@/modules/order/service";
 import * as shipping from "@/modules/shipping/service";
 import * as promos from "@/modules/promotion/service";
+import * as authModule from "@/modules/auth/service";
 import { updateSettings, getSettings } from "@/modules/store/service";
-import { refundOrder } from "@/modules/payment/service";
-import { deleteImage } from "@/modules/media/service";
-import { onOrderShipped } from "@/modules/notification/events";
+import { themeSchema } from "@/modules/store/theme";
 import { PAYMENT_PROVIDERS } from "@/modules/payment/schema";
+import * as catalog from "@/workflows/catalog";
+import * as orderFlows from "@/workflows/order";
 
 type Admin = Awaited<ReturnType<typeof assertAdmin>>;
 
@@ -29,6 +28,7 @@ async function run(fn: (admin: Admin) => Promise<string | void>, paths: string[]
 	try {
 		const admin = await assertAdmin();
 		const message = (await fn(admin)) ?? "Saved";
+		await invalidate(CacheTags.catalog); // public Store API cache
 		for (const p of paths) revalidatePath(p);
 		return { ok: true, message };
 	} catch (e) {
@@ -60,7 +60,7 @@ export async function createProductAction(_: ActionState, fd: FormData): Promise
 			.filter((c) => o[`price_${c}`]?.trim())
 			.map((c) => ({ currencyCode: c, amount: money(c).parse(o[`price_${c}`]) }));
 		if (!prices.length) throw new CommerceError("invalid_data", "Add a price in at least one currency");
-		id = await products.createProduct({
+		id = await catalog.createProduct({
 			...base,
 			handle: base.handle ?? undefined,
 			categoryIds: fd.getAll("categoryIds").map(String).filter(Boolean),
@@ -85,10 +85,7 @@ export async function updateProductAction(_: ActionState, fd: FormData): Promise
 
 export async function deleteProductAction(_: ActionState, fd: FormData): Promise<ActionState> {
 	const res = await run(async () => {
-		const p = await products.getProduct(z.string().parse(fd.get("id")));
-		if (!p) return "Already deleted";
-		await products.deleteProduct(p.id);
-		await Promise.allSettled(p.images.filter((i) => i.storageKey).map((i) => deleteImage(i.storageKey!)));
+		await catalog.deleteProduct(z.string().parse(fd.get("id")));
 	}, ["/admin/products"]);
 	if (res?.ok) redirect("/admin/products");
 	return res;
@@ -120,7 +117,7 @@ export async function addVariantAction(_: ActionState, fd: FormData): Promise<Ac
 		const productId = z.string().parse(o.productId);
 		const options: Record<string, string> = {};
 		for (const [k, v] of Object.entries(o)) if (k.startsWith("opt_") && v.trim()) options[k.slice(4)] = v.trim();
-		await products.addVariant(productId, {
+		await catalog.addVariant(productId, {
 			title: f.optText(200).parse(o.title) ?? undefined,
 			sku: f.optText(64).parse(o.sku),
 			options,
@@ -136,22 +133,20 @@ export async function addVariantAction(_: ActionState, fd: FormData): Promise<Ac
 export async function updateVariantAction(_: ActionState, fd: FormData): Promise<ActionState> {
 	return run(async (admin) => {
 		const o = formObject(fd);
-		const variantId = z.string().parse(o.variantId);
-		await products.updateVariant(variantId, {
+		await catalog.updateVariant(z.string().parse(o.variantId), {
 			title: f.text(200).min(1).parse(o.title),
 			sku: f.optText(64).parse(o.sku),
 			prices: await variantPrices(o),
 			manageInventory: f.bool.parse(o.manageInventory),
 			allowBackorder: f.bool.parse(o.allowBackorder),
-		});
-		const stock = f.optInt.parse(o.stock);
-		if (stock !== null) await inventory.setStock(variantId, stock, admin.id);
+			stock: f.optInt.parse(o.stock),
+		}, admin.id);
 		return "Variant saved";
 	}, ["/admin/products", "/admin/inventory"]);
 }
 
 export async function deleteVariantAction(_: ActionState, fd: FormData): Promise<ActionState> {
-	return run(async () => { await products.deleteVariant(z.string().parse(fd.get("variantId"))); return "Variant deleted"; }, ["/admin/products"]);
+	return run(async () => { await catalog.deleteVariant(z.string().parse(fd.get("variantId"))); return "Variant deleted"; }, ["/admin/products"]);
 }
 
 export async function addImageAction(input: { productId: string; url: string; key: string }): Promise<ActionState> {
@@ -164,8 +159,7 @@ export async function addImageAction(input: { productId: string; url: string; ke
 
 export async function deleteImageAction(_: ActionState, fd: FormData): Promise<ActionState> {
 	return run(async () => {
-		const img = await products.deleteProductImage(z.string().parse(fd.get("imageId")));
-		if (img?.storageKey) await deleteImage(img.storageKey).catch(() => {});
+		await catalog.deleteProductImage(z.string().parse(fd.get("imageId")));
 		return "Image removed";
 	}, ["/admin/products"]);
 }
@@ -228,16 +222,14 @@ export async function fulfillmentAction(_: ActionState, fd: FormData): Promise<A
 			orderId: z.string(), status: z.enum(["not_fulfilled", "fulfilled", "shipped", "delivered"]),
 			trackingNumber: f.optText(100), carrier: f.optText(100),
 		}).parse(formObject(fd));
-		const before = await orders.getOrder(o.orderId);
-		await orders.updateFulfillment(o.orderId, o, admin.id);
-		if (o.status === "shipped" && before?.fulfillmentStatus !== "shipped") await onOrderShipped(o.orderId);
+		await orderFlows.fulfillOrder(o.orderId, o, admin.id);
 		return "Fulfillment updated";
 	}, ["/admin/orders"]);
 }
 
 export async function cancelOrderAction(_: ActionState, fd: FormData): Promise<ActionState> {
 	return run(async (admin) => {
-		await orders.cancelOrder(z.string().parse(fd.get("orderId")), admin.id, { restock: fd.get("restock") === "on" });
+		await orderFlows.cancelOrder(z.string().parse(fd.get("orderId")), admin.id, { restock: fd.get("restock") === "on" });
 		return "Order canceled";
 	}, ["/admin/orders"]);
 }
@@ -246,7 +238,7 @@ export async function refundAction(_: ActionState, fd: FormData): Promise<Action
 	return run(async (admin) => {
 		const o = z.object({ orderId: z.string(), currency, amount: z.string(), reason: f.optText(300) }).parse(formObject(fd));
 		const amount = money(o.currency).parse(o.amount);
-		await refundOrder(o.orderId, amount, { reason: o.reason ?? undefined, actorId: admin.id });
+		await orderFlows.refundOrder(o.orderId, amount, { reason: o.reason ?? undefined, actorId: admin.id });
 		return "Refund issued";
 	}, ["/admin/orders"]);
 }
@@ -356,14 +348,34 @@ export async function updateSettingsAction(_: ActionState, fd: FormData): Promis
 export async function setAdminRoleAction(_: ActionState, fd: FormData): Promise<ActionState> {
 	return run(async (admin) => {
 		const o = z.object({ email, role: z.enum(["admin", "customer"]) }).parse(formObject(fd));
-		const [target] = await db().select().from(user).where(eq(user.email, o.email));
-		if (!target) throw new CommerceError("not_found", "No user with that email. Ask them to sign up first.");
-		if (target.id === admin.id && o.role !== "admin") throw new CommerceError("not_allowed", "You cannot remove your own admin access");
-		if (o.role === "customer") {
-			const others = await db().select({ id: user.id }).from(user).where(and(eq(user.role, "admin"), ne(user.id, target.id))).limit(1);
-			if (!others.length) throw new CommerceError("not_allowed", "At least one admin is required");
-		}
-		await db().update(user).set({ role: o.role }).where(eq(user.id, target.id));
+		await authModule.setRole(admin.id, o.email, o.role);
 		return o.role === "admin" ? `${o.email} is now an admin` : `${o.email} is no longer an admin`;
 	}, ["/admin/settings"]);
+}
+
+// ---------- Appearance ----------
+
+export async function saveThemeAction(theme: unknown): Promise<ActionState> {
+	return run(async () => {
+		await updateSettings({ theme: themeSchema.parse(theme) });
+		return "Appearance saved";
+	}, ["/admin", "/account"]);
+}
+
+// ---------- API keys ----------
+
+export async function createApiKeyAction(_: ActionState, fd: FormData): Promise<ActionState> {
+	try {
+		const admin = await assertAdmin();
+		const name = f.text(80).min(1, "Name is required").parse(fd.get("name") ?? "");
+		const { key } = await authModule.createApiKey(name, admin.id);
+		revalidatePath("/admin/settings");
+		return { ok: true, message: "API key created — copy it now, it won't be shown again", data: { key } };
+	} catch (e) {
+		return toActionError(e);
+	}
+}
+
+export async function revokeApiKeyAction(_: ActionState, fd: FormData): Promise<ActionState> {
+	return run(async () => { await authModule.revokeApiKey(z.string().parse(fd.get("id"))); return "API key revoked"; }, ["/admin/settings"]);
 }

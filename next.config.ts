@@ -26,6 +26,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
 	poweredByHeader: false,
+	// Local-only embedded Postgres used by `npm run dev` when DATABASE_URL is empty.
+	serverExternalPackages: ["@electric-sql/pglite"],
 	async headers() {
 		return [
 			{ source: "/:path*", headers: securityHeaders },

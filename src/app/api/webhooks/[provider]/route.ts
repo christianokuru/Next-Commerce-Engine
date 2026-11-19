@@ -1,4 +1,4 @@
-import { handleWebhook } from "@/modules/payment/service";
+import { handleWebhook } from "@/workflows/checkout";
 import { ProviderError } from "@/modules/payment/providers/types";
 import { CommerceError } from "@/lib/errors";
 

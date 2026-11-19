@@ -2,8 +2,8 @@ import { z } from "zod";
 import { route, preflight, body, rateLimit } from "@/lib/http";
 import { id } from "@/lib/validators";
 import { PAYMENT_PROVIDERS } from "@/modules/payment/schema";
-import { availableProviders, initiatePayment } from "@/modules/payment/service";
-import { retrieveCart } from "@/modules/cart/service";
+import { availableProviders, initiatePayment } from "@/workflows/checkout";
+import { retrieveCart } from "@/workflows/cart";
 
 const schema = z.object({ provider: z.enum(PAYMENT_PROVIDERS), cancelUrl: z.url().max(500).optional() });
 

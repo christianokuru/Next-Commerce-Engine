@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { route, preflight, body } from "@/lib/http";
 import { id } from "@/lib/validators";
-import { addLineItem } from "@/modules/cart/service";
+import { addLineItem } from "@/workflows/cart";
 import { serializeCart } from "@/server/store-api";
 
 const schema = z.object({ variantId: id("variant"), quantity: z.number().int().min(1).max(100) });

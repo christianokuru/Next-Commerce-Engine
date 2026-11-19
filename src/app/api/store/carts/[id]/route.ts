@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { route, preflight, body } from "@/lib/http";
 import { address, email, id } from "@/lib/validators";
-import { retrieveCart, updateCart } from "@/modules/cart/service";
+import { retrieveCart, updateCart } from "@/workflows/cart";
 import { optionalCustomer, serializeCart } from "@/server/store-api";
 
 const cartId = id("cart");

@@ -1,13 +1,11 @@
-import { route, rateLimit } from "@/lib/http";
-import { assertAdmin } from "@/server/session";
+import { adminRoute } from "@/server/admin-api";
+import { rateLimit } from "@/lib/http";
 import { uploadImage } from "@/modules/media/service";
 import { invalid } from "@/lib/errors";
 
-export const POST = route(async (req) => {
-	await assertAdmin();
+export const POST = adminRoute(async (req) => {
 	await rateLimit(req, "upload");
-	const form = await req.formData();
-	const file = form.get("file");
+	const file = (await req.formData()).get("file");
 	if (!(file instanceof File)) throw invalid("Missing file");
 	return uploadImage(file);
 });

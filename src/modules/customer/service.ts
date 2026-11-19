@@ -1,7 +1,6 @@
 import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import { db, type Db } from "@/db";
 import { customers, customerAddresses, type Address } from "./schema";
-import { orders } from "../order/schema";
 import { newId } from "@/lib/id";
 import { notFound } from "@/lib/errors";
 
@@ -21,6 +20,10 @@ export async function getOrCreateByEmail(email: string, d: Db = db(), extra: Par
 		.returning();
 	return created ?? (await d.select().from(customers).where(eq(customers.email, e)))[0];
 }
+
+/**
+ * Customer module — customer profiles and addresses. Linked to auth users by `userId`.
+ */
 
 /**
  * Resolve the customer profile for an authenticated user.
@@ -79,10 +82,12 @@ export async function listCustomers(opts: { q?: string; limit?: number; offset?:
 	return { customers: rows, count: total };
 }
 
+export async function countCustomers() {
+	const [{ n }] = await db().select({ n: count() }).from(customers);
+	return n;
+}
+
 export async function getCustomer(id: string) {
-	const c = await db().query.customers.findFirst({
-		where: eq(customers.id, id),
-		with: { addresses: true, orders: { orderBy: desc(orders.createdAt), limit: 50 } },
-	});
+	const c = await db().query.customers.findFirst({ where: eq(customers.id, id), with: { addresses: true } });
 	return c ?? null;
 }

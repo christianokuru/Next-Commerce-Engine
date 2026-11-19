@@ -14,7 +14,7 @@ export default async function Promotions() {
 	const [promos, settings] = await Promise.all([listPromotions(), getSettings()]);
 	return (
 		<>
-			<PageHeader title="Promotions" description="Discount codes applied to carts via the Store API." />
+			<PageHeader eyebrow="Marketing" title="Promotions" description="Discount codes applied to carts via the Store API." />
 			<div className="grid gap-4 lg:grid-cols-3">
 				<Card className="lg:col-span-2 p-0">
 					{promos.length ? (

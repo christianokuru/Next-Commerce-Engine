@@ -1,7 +1,9 @@
+/** Store module — single-row store settings + appearance theme. */
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { storeSettings } from "./schema";
 import { cached, invalidate, CacheTags } from "@/lib/cache";
+import { resolveTheme } from "./theme";
 
 export type StoreSettings = typeof storeSettings.$inferSelect;
 
@@ -10,6 +12,11 @@ export async function getSettingsUncached(): Promise<StoreSettings> {
 	if (row) return row;
 	const [created] = await db().insert(storeSettings).values({ id: "default" }).onConflictDoNothing().returning();
 	return created ?? (await db().select().from(storeSettings).where(eq(storeSettings.id, "default")))[0];
+}
+
+/** Active dashboard theme (falls back to the default preset). */
+export async function getTheme() {
+	return resolveTheme((await getSettings()).theme);
 }
 
 export async function getSettings(): Promise<StoreSettings> {

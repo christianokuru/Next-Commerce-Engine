@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { bearer } from "better-auth/plugins/bearer";
 import { db } from "@/db";
 import { user, session, account, verification, rateLimit } from "@/modules/auth/schema";
 import { sendEmail } from "@/modules/notification/email";
@@ -11,12 +12,20 @@ function storeName() {
 	return env("STORE_NAME") ?? "Store";
 }
 
+/** Zero-config local dev: a fixed dev-only secret. Production must set BETTER_AUTH_SECRET. */
+function authSecret() {
+	const s = env("BETTER_AUTH_SECRET");
+	if (s) return s;
+	if (process.env.NODE_ENV === "development") return "dev-only-insecure-secret-do-not-use-in-production";
+	return requireEnv("BETTER_AUTH_SECRET");
+}
+
 function createAuth() {
 	const google = env("GOOGLE_CLIENT_ID") && env("GOOGLE_CLIENT_SECRET");
 	return betterAuth({
 		appName: storeName(),
 		baseURL: appUrl(),
-		secret: requireEnv("BETTER_AUTH_SECRET"),
+		secret: authSecret(),
 		trustedOrigins: [appUrl(), ...(env("TRUSTED_ORIGINS")?.split(",").map((s) => s.trim()).filter(Boolean) ?? [])],
 		database: drizzleAdapter(db(), {
 			provider: "pg",
@@ -69,7 +78,8 @@ function createAuth() {
 			ipAddress: { ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"] },
 			useSecureCookies: appUrl().startsWith("https://"),
 		},
-		plugins: [nextCookies()],
+		// bearer(): headless storefronts on another domain can authenticate with `Authorization: Bearer <session token>`.
+		plugins: [bearer(), nextCookies()],
 	});
 }
 

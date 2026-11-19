@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { ActionForm, SubmitButton } from "@/components/app/action-form";
 import { CheckboxField, Field, TextareaField } from "@/components/app/field";
 import { Money, PageHeader, StatusBadge } from "@/components/app/ui-bits";
-import { getProduct, listCategories, listCollections } from "@/modules/product/service";
+import { listCategories, listCollections } from "@/modules/product/service";
+import { getProductDetail } from "@/queries/admin";
 import { getSettings } from "@/modules/store/service";
 import { imageUrl } from "@/modules/media/service";
 import { toMajor } from "@/lib/money";
@@ -21,14 +22,14 @@ export const metadata = { title: "Edit product" };
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
-	const [product, categories, collections, settings] = await Promise.all([getProduct(id), listCategories(), listCollections(), getSettings()]);
+	const [product, categories, collections, settings] = await Promise.all([getProductDetail(id), listCategories(), listCollections(), getSettings()]);
 	if (!product) notFound();
 	const priceOf = (v: (typeof product.variants)[number], c: string) => v.prices.find((p) => p.currencyCode === c);
 
 	return (
 		<>
 			<Link href="/admin/products" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ChevronLeft className="size-4" /> Products</Link>
-			<PageHeader title={product.title} actions={<StatusBadge status={product.status} />} />
+			<PageHeader eyebrow="Catalogue · Product" title={product.title} description={product.subtitle ?? undefined} actions={<StatusBadge status={product.status} />} />
 
 			<div className="grid gap-4 lg:grid-cols-3">
 				<div className="space-y-4 lg:col-span-2">
@@ -54,17 +55,17 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 						</CardHeader>
 						<CardContent className="space-y-3">
 							{product.variants.map((v) => (
-								<details key={v.id} className="group rounded-lg border">
-									<summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3">
+								<details key={v.id} className="group border-b border-border last:border-b-0">
+									<summary className="flex cursor-pointer list-none items-center justify-between gap-3 py-3">
 										<div className="min-w-0">
 											<p className="truncate font-medium">{v.title}</p>
-											<p className="text-xs text-muted-foreground">{v.sku ?? "No SKU"} · {v.manageInventory ? `${v.inventory?.stockedQuantity ?? 0} in stock` : "Not tracked"}</p>
+											<p className="text-xs text-muted-foreground">{v.sku ?? "No SKU"} · {(v.inventory?.manageInventory ?? true) ? `${v.inventory?.stockedQuantity ?? 0} in stock` : "Not tracked"}</p>
 										</div>
 										<div className="text-right text-sm">
 											{priceOf(v, settings.defaultCurrency) ? <Money amount={priceOf(v, settings.defaultCurrency)!.amount} currency={settings.defaultCurrency} /> : <span className="text-destructive">No price</span>}
 										</div>
 									</summary>
-									<div className="border-t p-3">
+									<div className="pb-4">
 										<ActionForm action={updateVariantAction}>
 											<input type="hidden" name="variantId" value={v.id} />
 											<div className="grid gap-3 sm:grid-cols-3">
@@ -81,8 +82,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 												))}
 											</div>
 											<div className="flex flex-wrap gap-4">
-												<CheckboxField label="Track inventory" name="manageInventory" defaultChecked={v.manageInventory} />
-												<CheckboxField label="Allow backorders" name="allowBackorder" defaultChecked={v.allowBackorder} />
+												<CheckboxField label="Track inventory" name="manageInventory" defaultChecked={v.inventory?.manageInventory ?? true} />
+												<CheckboxField label="Allow backorders" name="allowBackorder" defaultChecked={v.inventory?.allowBackorder ?? false} />
 											</div>
 											<SubmitButton size="sm">Save variant</SubmitButton>
 										</ActionForm>

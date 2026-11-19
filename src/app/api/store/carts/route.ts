@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { route, preflight, body, rateLimit, json } from "@/lib/http";
 import { currency, email } from "@/lib/validators";
-import { createCart, retrieveCart } from "@/modules/cart/service";
+import { createCart, retrieveCart } from "@/workflows/cart";
 import { optionalCustomer, serializeCart } from "@/server/store-api";
 
 const schema = z.object({ currencyCode: currency.optional(), email: email.optional() });

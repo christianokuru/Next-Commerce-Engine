@@ -1,4 +1,5 @@
 import { and, asc, eq, sql } from "drizzle-orm";
+/** Shipping module — zones (countries) and rates. */
 import { db, type Db } from "@/db";
 import { shippingOptions, shippingZones } from "./schema";
 import { newId } from "@/lib/id";
@@ -36,6 +37,11 @@ export async function createOption(input: {
 
 export async function setOptionActive(id: string, isActive: boolean) {
 	await db().update(shippingOptions).set({ isActive }).where(eq(shippingOptions.id, id));
+}
+
+export async function getOption(id: string, d: Db = db()) {
+	const [o] = await d.select().from(shippingOptions).where(eq(shippingOptions.id, id));
+	return o ?? null;
 }
 
 export async function deleteOption(id: string) {

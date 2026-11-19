@@ -1,10 +1,15 @@
+/**
+ * Module links (Medusa-style): relations between modules for read queries.
+ * There are no cross-module foreign keys — modules reference each other by id only,
+ * and these links let the query layer (src/queries) join across them.
+ */
 import { relations } from "drizzle-orm";
 import { user } from "../modules/auth/schema";
 import {
 	products, productVariants, productVariantPrices, productImages, productOptions,
 	productCategories, productCollections, productCategoryLinks,
 } from "../modules/product/schema";
-import { inventoryLevels } from "../modules/inventory/schema";
+import { inventoryItems } from "../modules/inventory/schema";
 import { customers, customerAddresses } from "../modules/customer/schema";
 import { carts, cartLineItems } from "../modules/cart/schema";
 import { shippingZones, shippingOptions } from "../modules/shipping/schema";
@@ -23,7 +28,7 @@ export const productsRelations = relations(products, ({ many, one }) => ({
 export const variantsRelations = relations(productVariants, ({ one, many }) => ({
 	product: one(products, { fields: [productVariants.productId], references: [products.id] }),
 	prices: many(productVariantPrices),
-	inventory: one(inventoryLevels, { fields: [productVariants.id], references: [inventoryLevels.variantId] }),
+	inventory: one(inventoryItems, { fields: [productVariants.id], references: [inventoryItems.variantId] }),
 }));
 
 export const pricesRelations = relations(productVariantPrices, ({ one }) => ({
@@ -53,8 +58,8 @@ export const collectionsRelations = relations(productCollections, ({ many }) => 
 	products: many(products),
 }));
 
-export const inventoryRelations = relations(inventoryLevels, ({ one }) => ({
-	variant: one(productVariants, { fields: [inventoryLevels.variantId], references: [productVariants.id] }),
+export const inventoryRelations = relations(inventoryItems, ({ one }) => ({
+	variant: one(productVariants, { fields: [inventoryItems.variantId], references: [productVariants.id] }),
 }));
 
 export const customersRelations = relations(customers, ({ one, many }) => ({

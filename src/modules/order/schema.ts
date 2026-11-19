@@ -1,7 +1,5 @@
 import { pgTable, text, timestamp, integer, jsonb, bigint, boolean, index } from "drizzle-orm/pg-core";
-import { customers, type Address } from "../customer/schema";
-import { carts } from "../cart/schema";
-import { productVariants, products } from "../product/schema";
+import type { Address } from "../../lib/address";
 
 export type ShippingMethodSnapshot = { optionId: string; name: string; amount: number };
 export type PromotionSnapshot = { id: string; code: string; type: string; value: number };
@@ -15,8 +13,8 @@ export const orders = pgTable(
 	{
 		id: text("id").primaryKey(),
 		displayId: integer("display_id").generatedAlwaysAsIdentity({ startWith: 1001 }).notNull().unique(),
-		cartId: text("cart_id").notNull().unique().references(() => carts.id),
-		customerId: text("customer_id").references(() => customers.id, { onDelete: "set null" }),
+		cartId: text("cart_id").notNull().unique(),
+		customerId: text("customer_id"),
 		email: text("email").notNull(),
 		currencyCode: text("currency_code").notNull(),
 		status: text("status", { enum: ORDER_STATUS }).notNull().default("pending"),
@@ -52,8 +50,8 @@ export const orderLineItems = pgTable(
 	{
 		id: text("id").primaryKey(),
 		orderId: text("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
-		productId: text("product_id").references(() => products.id, { onDelete: "set null" }),
-		variantId: text("variant_id").references(() => productVariants.id, { onDelete: "set null" }),
+		productId: text("product_id"),
+		variantId: text("variant_id"),
 		title: text("title").notNull(),
 		variantTitle: text("variant_title"),
 		sku: text("sku"),

@@ -14,7 +14,7 @@ export default async function Categories() {
 	const name = new Map(cats.map((c) => [c.id, c.name]));
 	return (
 		<>
-			<PageHeader title="Categories" description="Hierarchical product taxonomy exposed via the Store API." />
+			<PageHeader eyebrow="Catalogue" title="Categories" description="Hierarchical product taxonomy exposed via the Store API." />
 			<div className="grid gap-4 lg:grid-cols-3">
 				<Card className="lg:col-span-2 p-0">
 					{cats.length ? (

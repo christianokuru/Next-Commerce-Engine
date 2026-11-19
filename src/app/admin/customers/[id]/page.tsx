@@ -3,19 +3,19 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Money, PageHeader, StatusBadge, dateTime } from "@/components/app/ui-bits";
-import { getCustomer } from "@/modules/customer/service";
+import { getCustomerDetail } from "@/queries/admin";
 import { AddressBlock } from "../../orders/address";
 
 export const metadata = { title: "Customer" };
 
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
-	const c = await getCustomer((await params).id);
+	const c = await getCustomerDetail((await params).id);
 	if (!c) notFound();
 	const spent = c.orders.filter((o) => o.status !== "canceled").reduce<Record<string, number>>((m, o) => ({ ...m, [o.currencyCode]: (m[o.currencyCode] ?? 0) + o.total - o.refundedTotal }), {});
 	return (
 		<>
 			<Link href="/admin/customers" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ChevronLeft className="size-4" /> Customers</Link>
-			<PageHeader title={[c.firstName, c.lastName].filter(Boolean).join(" ") || c.email} description={c.email} />
+			<PageHeader eyebrow="People · Customer" title={[c.firstName, c.lastName].filter(Boolean).join(" ") || c.email} description={c.email} />
 			<div className="grid gap-4 lg:grid-cols-3">
 				<Card className="lg:col-span-2">
 					<CardHeader><CardTitle>Orders ({c.orders.length})</CardTitle></CardHeader>

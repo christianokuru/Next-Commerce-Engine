@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import type { Theme } from "./theme";
 
 export type StoreAddress = { line1?: string; city?: string; state?: string; country?: string; postalCode?: string };
 
@@ -16,5 +17,7 @@ export const storeSettings = pgTable("store_settings", {
 	taxInclusive: boolean("tax_inclusive").notNull().default(true),
 	paymentProviders: text("payment_providers").array().notNull().default([]),
 	address: jsonb("address").$type<StoreAddress>(),
+	/** Dashboard appearance (colors, fonts, style). null → default preset. */
+	theme: jsonb("theme").$type<Theme>(),
 	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

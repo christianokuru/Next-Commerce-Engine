@@ -1,22 +1,12 @@
 import { pgTable, text, timestamp, boolean, jsonb, index } from "drizzle-orm/pg-core";
-import { user } from "../auth/schema";
 
-export type Address = {
-	firstName: string;
-	lastName: string;
-	company?: string | null;
-	address1: string;
-	address2?: string | null;
-	city: string;
-	province?: string | null;
-	postalCode?: string | null;
-	countryCode: string;
-	phone?: string | null;
-};
+export type { Address } from "../../lib/address";
+import type { Address } from "../../lib/address";
 
 export const customers = pgTable("customers", {
 	id: text("id").primaryKey(),
-	userId: text("user_id").unique().references(() => user.id, { onDelete: "set null" }),
+	/** Link → auth.user (no FK: modules are isolated). */
+	userId: text("user_id").unique(),
 	email: text("email").notNull().unique(),
 	firstName: text("first_name"),
 	lastName: text("last_name"),

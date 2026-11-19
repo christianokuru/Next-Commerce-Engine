@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ActionForm, SubmitButton } from "@/components/app/action-form";
 import { CheckboxField, Field, SelectField } from "@/components/app/field";
 import { Money, PageHeader, StatusBadge, dateTime } from "@/components/app/ui-bits";
-import { getOrder } from "@/modules/order/service";
+import { getOrderDetail } from "@/queries/admin";
 import { imageUrl } from "@/modules/media/service";
 import { toMajor } from "@/lib/money";
 import { cancelOrderAction, fulfillmentAction, orderNoteAction, refundAction } from "../../actions";
@@ -16,7 +16,7 @@ export const metadata = { title: "Order" };
 
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
-	const o = await getOrder(id);
+	const o = await getOrderDetail(id);
 	if (!o) notFound();
 	const payment = o.payments.find((p) => p.orderId === o.id);
 	const refundable = payment ? payment.amount - payment.refundedAmount : 0;
@@ -28,6 +28,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
 		<>
 			<Link href="/admin/orders" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ChevronLeft className="size-4" /> Orders</Link>
 			<PageHeader
+				eyebrow="Sales · Order"
 				title={`Order #${o.displayId}`}
 				description={dateTime(o.createdAt)}
 				actions={<><StatusBadge status={o.status} /><StatusBadge status={o.paymentStatus} /><StatusBadge status={o.fulfillmentStatus} /></>}

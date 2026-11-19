@@ -1,27 +1,25 @@
-import { desc, eq } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ActionForm, SubmitButton } from "@/components/app/action-form";
 import { CheckboxField, Field, SelectField } from "@/components/app/field";
 import { PageHeader } from "@/components/app/ui-bits";
-import { db } from "@/db";
-import { user } from "@/modules/auth/schema";
+import { Button } from "@/components/ui/button";
+import { listAdmins, listApiKeys } from "@/modules/auth/service";
+import { dateOnly } from "@/components/app/ui-bits";
+import { ApiKeyForm } from "./api-key-form";
 import { getSettingsUncached } from "@/modules/store/service";
 import { allProviders } from "@/modules/payment/providers";
 import { appUrl } from "@/lib/env";
-import { setAdminRoleAction, updateSettingsAction } from "../actions";
+import { revokeApiKeyAction, setAdminRoleAction, updateSettingsAction } from "../actions";
 
 export const metadata = { title: "Settings" };
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-	const [s, admins] = await Promise.all([
-		getSettingsUncached(),
-		db().select({ id: user.id, name: user.name, email: user.email }).from(user).where(eq(user.role, "admin")).orderBy(desc(user.createdAt)),
-	]);
+	const [s, admins, keys] = await Promise.all([getSettingsUncached(), listAdmins(), listApiKeys()]);
 	return (
 		<>
-			<PageHeader title="Settings" />
+			<PageHeader eyebrow="Store" title="Settings" />
 			<div className="grid gap-4 lg:grid-cols-3">
 				<ActionForm action={updateSettingsAction} className="space-y-4 lg:col-span-2">
 					<Card>
@@ -63,6 +61,7 @@ export default async function SettingsPage() {
 					<SubmitButton>Save settings</SubmitButton>
 				</ActionForm>
 
+				<div className="space-y-4">
 				<Card className="h-fit">
 					<CardHeader><CardTitle>Team</CardTitle><CardDescription>Admins can manage everything in this dashboard.</CardDescription></CardHeader>
 					<CardContent className="space-y-4">
@@ -76,6 +75,34 @@ export default async function SettingsPage() {
 						</ActionForm>
 					</CardContent>
 				</Card>
+
+				<Card className="h-fit">
+					<CardHeader>
+						<CardTitle>API keys</CardTitle>
+						<CardDescription>For the Admin REST API (<code>/api/admin/*</code>). Send as <code>Authorization: Bearer nce_sk_…</code>.</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<ApiKeyForm />
+						<ul className="ledger text-sm">
+							{keys.map((k) => (
+								<li key={k.id} className="flex items-center justify-between gap-2 py-2.5">
+									<div className="min-w-0">
+										<p className={k.revokedAt ? "text-muted-foreground line-through" : "font-medium"}>{k.name}</p>
+										<p className="font-mono text-[11px] text-muted-foreground">{k.prefix}… · {k.lastUsedAt ? `used ${dateOnly(k.lastUsedAt)}` : "never used"}</p>
+									</div>
+									{!k.revokedAt && (
+										<ActionForm action={revokeApiKeyAction} confirm={`Revoke ${k.name}? Integrations using it will stop working.`} className="space-y-0">
+											<input type="hidden" name="id" value={k.id} />
+											<Button type="submit" variant="ghost" size="sm" className="text-destructive">Revoke</Button>
+										</ActionForm>
+									)}
+								</li>
+							))}
+							{!keys.length && <li className="py-2.5 text-muted-foreground">No keys yet.</li>}
+						</ul>
+					</CardContent>
+				</Card>
+				</div>
 			</div>
 		</>
 	);

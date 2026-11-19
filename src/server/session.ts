@@ -2,10 +2,8 @@ import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
-import { user as userTable } from "@/modules/auth/schema";
+import { getRole } from "@/modules/auth/service";
 import { getCustomerForUser } from "@/modules/customer/service";
 import { CommerceError } from "@/lib/errors";
 
@@ -21,10 +19,7 @@ const getFreshSession = cache(async () => {
 });
 
 /** Role is re-read from the DB (not the cookie cache) so demotions apply immediately. */
-const freshRole = cache(async (userId: string) => {
-	const [u] = await db().select({ role: userTable.role }).from(userTable).where(eq(userTable.id, userId));
-	return u?.role ?? null;
-});
+const freshRole = cache(getRole);
 
 export async function requireAdmin() {
 	const s = await getFreshSession();
@@ -33,7 +28,7 @@ export async function requireAdmin() {
 	return s.user;
 }
 
-/** For server actions / route handlers: throws instead of redirecting. */
+/** For server actions: throws instead of redirecting. */
 export async function assertAdmin() {
 	const s = await getFreshSession();
 	if (!s) throw new CommerceError("unauthorized", "Sign in required");

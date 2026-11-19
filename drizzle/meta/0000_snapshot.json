@@ -1,5 +1,5 @@
 {
-  "id": "71689521-e525-44a3-880e-6ecc86e54f75",
+  "id": "983de3e2-98d8-4637-a923-f19ca4b4c36d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -123,6 +123,76 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.api_keys": {
+      "name": "api_keys",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prefix": {
+          "name": "prefix",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_used_at": {
+          "name": "last_used_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "api_keys_hash_unique": {
+          "name": "api_keys_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "hash"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -486,6 +556,12 @@
         },
         "address": {
           "name": "address",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "theme": {
+          "name": "theme",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -1006,20 +1082,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "manage_inventory": {
-          "name": "manage_inventory",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "allow_backorder": {
-          "name": "allow_backorder",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "rank": {
           "name": "rank",
           "type": "integer",
@@ -1223,8 +1285,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.inventory_levels": {
-      "name": "inventory_levels",
+    "public.inventory_items": {
+      "name": "inventory_items",
       "schema": "",
       "columns": {
         "variant_id": {
@@ -1239,6 +1301,20 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "manage_inventory": {
+          "name": "manage_inventory",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "allow_backorder": {
+          "name": "allow_backorder",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "low_stock_threshold": {
           "name": "low_stock_threshold",
@@ -1255,21 +1331,7 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "inventory_levels_variant_id_product_variants_id_fk": {
-          "name": "inventory_levels_variant_id_product_variants_id_fk",
-          "tableFrom": "inventory_levels",
-          "tableTo": "product_variants",
-          "columnsFrom": [
-            "variant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1347,21 +1409,7 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "inventory_movements_variant_id_product_variants_id_fk": {
-          "name": "inventory_movements_variant_id_product_variants_id_fk",
-          "tableFrom": "inventory_movements",
-          "tableTo": "product_variants",
-          "columnsFrom": [
-            "variant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1505,21 +1553,7 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "customers_user_id_user_id_fk": {
-          "name": "customers_user_id_user_id_fk",
-          "tableFrom": "customers",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "customers_user_id_unique": {
@@ -1867,19 +1901,6 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
-        },
-        "cart_line_items_variant_id_product_variants_id_fk": {
-          "name": "cart_line_items_variant_id_product_variants_id_fk",
-          "tableFrom": "cart_line_items",
-          "tableTo": "product_variants",
-          "columnsFrom": [
-            "variant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1989,47 +2010,7 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "carts_customer_id_customers_id_fk": {
-          "name": "carts_customer_id_customers_id_fk",
-          "tableFrom": "carts",
-          "tableTo": "customers",
-          "columnsFrom": [
-            "customer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "carts_shipping_option_id_shipping_options_id_fk": {
-          "name": "carts_shipping_option_id_shipping_options_id_fk",
-          "tableFrom": "carts",
-          "tableTo": "shipping_options",
-          "columnsFrom": [
-            "shipping_option_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "carts_promotion_id_promotions_id_fk": {
-          "name": "carts_promotion_id_promotions_id_fk",
-          "tableFrom": "carts",
-          "tableTo": "promotions",
-          "columnsFrom": [
-            "promotion_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -2216,32 +2197,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "order_line_items_product_id_products_id_fk": {
-          "name": "order_line_items_product_id_products_id_fk",
-          "tableFrom": "order_line_items",
-          "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "order_line_items_variant_id_product_variants_id_fk": {
-          "name": "order_line_items_variant_id_product_variants_id_fk",
-          "tableFrom": "order_line_items",
-          "tableTo": "product_variants",
-          "columnsFrom": [
-            "variant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -2480,34 +2435,7 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "orders_cart_id_carts_id_fk": {
-          "name": "orders_cart_id_carts_id_fk",
-          "tableFrom": "orders",
-          "tableTo": "carts",
-          "columnsFrom": [
-            "cart_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "orders_customer_id_customers_id_fk": {
-          "name": "orders_customer_id_customers_id_fk",
-          "tableFrom": "orders",
-          "tableTo": "customers",
-          "columnsFrom": [
-            "customer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "orders_display_id_unique": {
@@ -2660,34 +2588,7 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "payments_cart_id_carts_id_fk": {
-          "name": "payments_cart_id_carts_id_fk",
-          "tableFrom": "payments",
-          "tableTo": "carts",
-          "columnsFrom": [
-            "cart_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "payments_order_id_orders_id_fk": {
-          "name": "payments_order_id_orders_id_fk",
-          "tableFrom": "payments",
-          "tableTo": "orders",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "payments_reference_unique": {

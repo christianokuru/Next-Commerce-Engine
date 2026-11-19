@@ -1,4 +1,5 @@
 import { desc, eq, sql } from "drizzle-orm";
+/** Promotion module — discount codes. */
 import { db, type Db } from "@/db";
 import { promotions } from "./schema";
 import { newId } from "@/lib/id";
@@ -62,6 +63,11 @@ export async function listPromotions() {
 
 export async function findByCode(code: string, d: Db = db()) {
 	const [p] = await d.select().from(promotions).where(eq(promotions.code, normalizeCode(code)));
+	return p ?? null;
+}
+
+export async function getPromotion(id: string, d: Db = db()) {
+	const [p] = await d.select().from(promotions).where(eq(promotions.id, id));
 	return p ?? null;
 }
 

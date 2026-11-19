@@ -10,7 +10,8 @@ function corsHeaders(req: Request): Record<string, string> {
 		"Access-Control-Allow-Origin": origin,
 		"Access-Control-Allow-Credentials": "true",
 		"Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,OPTIONS",
-		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization",
+		"Access-Control-Expose-Headers": "set-auth-token",
 		"Access-Control-Max-Age": "600",
 		Vary: "Origin",
 	};
@@ -51,6 +52,9 @@ export function preflight(req: Request) {
 }
 
 export async function body<T extends z.ZodType>(req: Request, schema: T): Promise<z.infer<T>> {
+	// JSON only: cross-site "simple" requests (text/plain, form posts) can't reach mutations.
+	if (!(req.headers.get("content-type") ?? "").toLowerCase().includes("application/json"))
+		throw new CommerceError("invalid_data", "Content-Type must be application/json");
 	const len = Number(req.headers.get("content-length") ?? 0);
 	if (len > 64_000) throw new CommerceError("invalid_data", "Payload too large");
 	const data = await req.json().catch(() => {

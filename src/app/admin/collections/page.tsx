@@ -13,7 +13,7 @@ export default async function Collections() {
 	const cols = await listCollections();
 	return (
 		<>
-			<PageHeader title="Collections" description="Curated groups like “Summer Sale” or “New Arrivals”." />
+			<PageHeader eyebrow="Catalogue" title="Collections" description="Curated groups like “Summer Sale” or “New Arrivals”." />
 			<div className="grid gap-4 lg:grid-cols-3">
 				<Card className="lg:col-span-2 p-0">
 					{cols.length ? (

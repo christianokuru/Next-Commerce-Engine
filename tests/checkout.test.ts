@@ -2,14 +2,15 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { setupTestDb } from "./setup-db";
 import type { Db } from "@/db";
-import { inventoryLevels, orders, payments, promotions, webhookEvents, carts } from "@/db/schema";
+import { inventoryItems, orders, payments, promotions, webhookEvents, carts } from "@/db/schema";
 import { updateSettings } from "@/modules/store/service";
-import { createProduct, getProduct } from "@/modules/product/service";
+import { getProduct } from "@/modules/product/service";
+import { createProduct } from "@/workflows/catalog";
 import { createZone, createOption } from "@/modules/shipping/service";
 import { createPromotion } from "@/modules/promotion/service";
-import * as cartSvc from "@/modules/cart/service";
-import { initiatePayment, confirmPayment, handleWebhook, refundOrder } from "@/modules/payment/service";
-import { cancelOrder } from "@/modules/order/service";
+import * as cartSvc from "@/workflows/cart";
+import { initiatePayment, confirmPayment, handleWebhook } from "@/workflows/checkout";
+import { refundOrder, cancelOrder } from "@/workflows/order";
 import { registerProvider } from "@/modules/payment/providers";
 import type { PaymentProvider, VerifyResult } from "@/modules/payment/providers/types";
 
@@ -45,7 +46,7 @@ async function product(stock: number, price = 10000, opts: { backorder?: boolean
 		title: `Tee ${Math.random()}`, status: "published",
 		variants: [{ title: "Default", prices: [{ currencyCode: "NGN", amount: price }], stock, allowBackorder: opts.backorder }],
 	});
-	const p = await getProduct(id!);
+	const p = await getProduct(id);
 	return p!.variants[0].id;
 }
 
@@ -58,7 +59,7 @@ async function readyCart(variantId: string, qty: number, shippingOptionId: strin
 }
 
 const stockOf = async (variantId: string) =>
-	(await d.select().from(inventoryLevels).where(eq(inventoryLevels.variantId, variantId)))[0].stockedQuantity;
+	(await d.select().from(inventoryItems).where(eq(inventoryItems.variantId, variantId)))[0].stockedQuantity;
 
 let shippingOptionId: string;
 

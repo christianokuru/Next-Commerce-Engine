@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { route, preflight, json } from "@/lib/http";
 import { cached, CacheTags } from "@/lib/cache";
-import { listPublishedProducts } from "@/modules/product/service";
+import { listStoreProducts } from "@/queries/catalog";
 import { resolveCurrency } from "@/server/store-api";
 
 const query = z.object({
@@ -18,7 +18,7 @@ export const GET = route(async (req) => {
 	const p = query.parse(Object.fromEntries(new URL(req.url).searchParams));
 	const key = JSON.stringify([currency, p.q, p.category, p.collection, p.limit, p.offset]);
 	const data = await cached(CacheTags.catalog, `products:${key}`, 300, () =>
-		listPublishedProducts({ currency, q: p.q, categoryHandle: p.category, collectionHandle: p.collection, limit: p.limit, offset: p.offset }),
+		listStoreProducts({ currency, q: p.q, categoryHandle: p.category, collectionHandle: p.collection, limit: p.limit, offset: p.offset }),
 	);
 	return json(req, data, { headers: { "Cache-Control": "public, max-age=30, s-maxage=60" } });
 });

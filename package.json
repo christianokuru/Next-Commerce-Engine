@@ -7,7 +7,7 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "eslint .",
-		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+		"deploy": "npm run db:migrate && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
 		"upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts",
@@ -17,7 +17,8 @@
 		"db:migrate": "tsx scripts/migrate.mts",
 		"test:neon": "TEST_DATABASE_URL=$DATABASE_URL vitest run tests/checkout.test.ts",
 		"e2e": "node tests/e2e/workers-e2e.mjs",
-		"e2e:auth": "node tests/e2e/auth-e2e.mjs"
+		"e2e:auth": "node tests/e2e/auth-e2e.mjs",
+		"e2e:dev": "node tests/e2e/zero-config.mjs"
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.9.0",

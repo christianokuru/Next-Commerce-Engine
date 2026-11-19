@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { route, preflight, body, rateLimit } from "@/lib/http";
 import { id } from "@/lib/validators";
-import { applyPromotion, removePromotion } from "@/modules/cart/service";
+import { applyPromotion, removePromotion } from "@/workflows/cart";
 import { serializeCart } from "@/server/store-api";
 
 export const OPTIONS = preflight;

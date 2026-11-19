@@ -66,3 +66,16 @@ export const rateLimit = pgTable("rate_limit", {
 	count: integer("count").notNull(),
 	lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });
+
+/** Admin REST API keys. Only a SHA-256 hash is stored; the plaintext is shown once at creation. */
+export const apiKeys = pgTable("api_keys", {
+	id: text("id").primaryKey(),
+	name: text("name").notNull(),
+	/** First characters of the key, for display ("nce_sk_ab12…"). */
+	prefix: text("prefix").notNull(),
+	hash: text("hash").notNull().unique(),
+	createdBy: text("created_by").notNull(),
+	lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+	revokedAt: timestamp("revoked_at", { withTimezone: true }),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { route, preflight, body } from "@/lib/http";
 import { id } from "@/lib/validators";
-import { setShippingOption } from "@/modules/cart/service";
+import { setShippingOption } from "@/workflows/cart";
 import { serializeCart } from "@/server/store-api";
 
 export const OPTIONS = preflight;

@@ -15,7 +15,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
 	const { orders, count } = await listOrders({ q: sp.q?.slice(0, 100), status, limit: LIMIT, offset });
 	return (
 		<>
-			<PageHeader title="Orders" description={`${count} orders`} />
+			<PageHeader eyebrow="Sales" title="Orders" description={`${count} orders`} />
 			<form className="mb-4 flex gap-2">
 				<Input name="q" defaultValue={sp.q} placeholder="Order # or email" className="h-10" />
 				<select name="status" defaultValue={status ?? ""} className="h-10 rounded-lg border bg-transparent px-2 text-sm">

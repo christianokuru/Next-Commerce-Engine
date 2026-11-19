@@ -72,8 +72,6 @@ export const productVariants = pgTable(
 		/** Option title -> value, e.g. { Size: "M" } */
 		options: jsonb("options").$type<Record<string, string>>().notNull().default({}),
 		weightGrams: integer("weight_grams"),
-		manageInventory: boolean("manage_inventory").notNull().default(true),
-		allowBackorder: boolean("allow_backorder").notNull().default(false),
 		rank: integer("rank").notNull().default(0),
 		...ts,
 	},

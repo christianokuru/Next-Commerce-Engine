@@ -49,12 +49,19 @@ const neonDriver: Driver = {
 	},
 };
 
-let driver: Driver = neonDriver;
+// Stored on globalThis so the dev driver set in instrumentation is shared by every route bundle.
+const g = globalThis as { __nceDbDriver?: Driver };
 
-/** Swap the driver (used by tests with PGlite). */
+/** Swap the driver (local PGlite in `next dev`, tests). */
 export function setDriver(d: Driver) {
-	driver = d;
+	g.__nceDbDriver = d;
 }
 
-export const db = () => driver.db();
-export const transaction = <T>(fn: (tx: Db) => Promise<T>) => driver.transaction(fn);
+const driver = () => g.__nceDbDriver ?? neonDriver;
+export const db = () => driver().db();
+export const transaction = <T>(fn: (tx: Db) => Promise<T>) => driver().transaction(fn);
+
+/** Run `fn` in the caller's transaction if one is given, otherwise in a new one. Lets services compose inside workflows. */
+export function inTx<T>(tx: Db | undefined, fn: (tx: Db) => Promise<T>): Promise<T> {
+	return tx ? fn(tx) : transaction(fn);
+}

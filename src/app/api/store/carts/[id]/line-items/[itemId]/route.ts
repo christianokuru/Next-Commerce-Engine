@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { route, preflight, body } from "@/lib/http";
 import { id } from "@/lib/validators";
-import { removeLineItem, updateLineItem } from "@/modules/cart/service";
+import { removeLineItem, updateLineItem } from "@/workflows/cart";
 import { serializeCart } from "@/server/store-api";
 
 type P = { id: string; itemId: string };

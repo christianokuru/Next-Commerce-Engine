@@ -14,7 +14,7 @@ export default async function Shipping() {
 	const [zones, settings] = await Promise.all([listZones(), getSettings()]);
 	return (
 		<>
-			<PageHeader title="Shipping" description="Zones group countries; options are the rates shoppers choose at checkout." />
+			<PageHeader eyebrow="Operations" title="Shipping" description="Zones group countries; options are the rates shoppers choose at checkout." />
 			<div className="grid gap-4 lg:grid-cols-3">
 				<div className="space-y-4 lg:col-span-2">
 					{zones.length ? zones.map((z) => (

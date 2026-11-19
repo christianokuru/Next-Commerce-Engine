@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PAYMENT_PROVIDERS, type PaymentProviderId } from "@/modules/payment/schema";
-import { confirmPayment } from "@/modules/payment/service";
+import { confirmPayment } from "@/workflows/checkout";
 import { getSettings } from "@/modules/store/service";
 import { appUrl } from "@/lib/env";
 

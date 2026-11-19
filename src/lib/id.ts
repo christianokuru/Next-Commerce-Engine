@@ -29,7 +29,7 @@ export function ulid() {
 export type IdPrefix =
 	| "prod" | "variant" | "price" | "img" | "opt" | "pcat" | "pcol"
 	| "cus" | "addr" | "cart" | "item" | "promo" | "szone" | "so"
-	| "order" | "oli" | "oevt" | "pay" | "ref" | "whk" | "imov";
+	| "order" | "oli" | "oevt" | "pay" | "ref" | "whk" | "imov" | "apik";
 
 export function newId(prefix: IdPrefix) {
 	return `${prefix}_${ulid()}`;

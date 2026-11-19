@@ -13,7 +13,7 @@ export default async function NewProduct() {
 	const [categories, collections, settings] = await Promise.all([listCategories(), listCollections(), getSettings()]);
 	return (
 		<>
-			<PageHeader title="New product" description="Start with a single variant; add options and more variants after saving." />
+			<PageHeader eyebrow="Catalogue" title="New product" description="Start with a single variant; add options and more variants after saving." />
 			<ActionForm action={createProductAction} className="grid gap-4 lg:grid-cols-3 lg:space-y-0">
 				<Card className="lg:col-span-2">
 					<CardContent className="space-y-4"><ProductFields categories={categories} collections={collections} /></CardContent>

@@ -14,7 +14,7 @@ export default async function Customers({ searchParams }: { searchParams: Promis
 	const { customers, count } = await listCustomers({ q: sp.q?.slice(0, 100), limit: LIMIT, offset });
 	return (
 		<>
-			<PageHeader title="Customers" description={`${count} customers`} />
+			<PageHeader eyebrow="People" title="Customers" description={`${count} customers`} />
 			<form className="mb-4"><Input name="q" defaultValue={sp.q} placeholder="Search by name or email" className="h-10" /></form>
 			{customers.length ? (
 				<Card className="p-0">

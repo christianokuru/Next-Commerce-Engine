@@ -16,7 +16,7 @@ export async function setupTestDb() {
 		// Integration mode: real Neon (HTTP for queries, WebSocket Pool for transactions). DB must be migrated.
 		process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 		const { db } = await import("@/db");
-		await db().execute(sql`truncate table webhook_events, refunds, payments, order_events, order_line_items, orders, cart_line_items, carts, promotions, shipping_options, shipping_zones, inventory_movements, inventory_levels, product_variant_prices, product_variants, product_images, product_options, product_category_links, products, customers, store_settings cascade`);
+		await db().execute(sql`truncate table webhook_events, refunds, payments, order_events, order_line_items, orders, cart_line_items, carts, promotions, shipping_options, shipping_zones, inventory_movements, inventory_items, product_variant_prices, product_variants, product_images, product_options, product_category_links, products, customers, store_settings, api_keys cascade`);
 		return { client: null, db: db() };
 	}
 	const client = new PGlite();

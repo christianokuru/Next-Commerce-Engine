@@ -1,6 +1,6 @@
 import { route, preflight } from "@/lib/http";
 import { getSettings } from "@/modules/store/service";
-import { availableProviders } from "@/modules/payment/service";
+import { availableProviders } from "@/workflows/checkout";
 
 export const OPTIONS = preflight;
 export const GET = route(async () => {

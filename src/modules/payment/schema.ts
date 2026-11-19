@@ -1,6 +1,4 @@
 import { pgTable, text, timestamp, jsonb, bigint, index, uniqueIndex } from "drizzle-orm/pg-core";
-import { carts } from "../cart/schema";
-import { orders } from "../order/schema";
 
 export const PAYMENT_PROVIDERS = ["paystack", "flutterwave", "stripe"] as const;
 export type PaymentProviderId = (typeof PAYMENT_PROVIDERS)[number];
@@ -14,8 +12,8 @@ export const payments = pgTable(
 	"payments",
 	{
 		id: text("id").primaryKey(),
-		cartId: text("cart_id").notNull().references(() => carts.id),
-		orderId: text("order_id").references(() => orders.id, { onDelete: "set null" }),
+		cartId: text("cart_id").notNull(),
+		orderId: text("order_id"),
 		provider: text("provider", { enum: PAYMENT_PROVIDERS }).notNull(),
 		/** Our merchant reference sent to the provider (tx_ref / reference / client_reference_id). */
 		reference: text("reference").notNull().unique(),

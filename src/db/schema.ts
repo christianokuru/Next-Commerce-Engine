@@ -8,4 +8,4 @@ export * from "../modules/shipping/schema";
 export * from "../modules/cart/schema";
 export * from "../modules/order/schema";
 export * from "../modules/payment/schema";
-export * from "./relations";
+export * from "./links";
