@@ -31,8 +31,9 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 	return (
-		<html lang="en">
-			<body className={`${fontVars} font-sans antialiased`}>
+		// Font variables live on <html> so :root-level theme tokens (--theme-body/heading) can resolve them.
+		<html lang="en" className={fontVars}>
+			<body className="font-sans antialiased">
 				{children}
 				<Toaster position="top-center" />
 				<PwaRegister />

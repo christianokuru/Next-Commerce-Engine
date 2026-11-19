@@ -8,7 +8,7 @@ import { CheckboxField, Field, SelectField } from "@/components/app/field";
 import { Money, PageHeader, StatusBadge, dateTime } from "@/components/app/ui-bits";
 import { getOrderDetail } from "@/queries/admin";
 import { imageUrl } from "@/modules/media/service";
-import { toMajor } from "@/lib/money";
+import { formatMoney, toMajor } from "@/lib/money";
 import { cancelOrderAction, fulfillmentAction, orderNoteAction, refundAction } from "../../actions";
 import { AddressBlock } from "../address";
 
@@ -118,7 +118,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
 									{refundable > 0 && (
 										<ActionForm action={refundAction} confirm="Issue this refund through the payment provider?">
 											<input type="hidden" name="orderId" value={o.id} /><input type="hidden" name="currency" value={o.currencyCode} />
-											<Field label={`Refund amount (max ${toMajor(refundable, o.currencyCode)})`} name="amount" inputMode="decimal" required defaultValue={String(toMajor(refundable, o.currencyCode))} />
+											<Field label={`Refund amount (max ${formatMoney(refundable, o.currencyCode)})`} name="amount" inputMode="decimal" required defaultValue={String(toMajor(refundable, o.currencyCode))} />
 											<Field label="Reason" name="reason" maxLength={300} />
 											<SubmitButton variant="outline" className="w-full">Refund</SubmitButton>
 										</ActionForm>

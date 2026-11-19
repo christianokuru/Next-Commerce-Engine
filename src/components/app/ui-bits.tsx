@@ -43,7 +43,7 @@ export function Stat({ label, value, note, className }: { label: string; value: 
 	return (
 		<div className={cn("min-w-0 py-4 pr-4", className)}>
 			<p className="eyebrow">{label}</p>
-			<p className="numeral mt-2 truncate text-3xl sm:text-4xl">{value}</p>
+			<p className="numeral mt-2 truncate text-2xl sm:text-4xl">{value}</p>
 			{note && <p className="mt-1 text-xs text-muted-foreground">{note}</p>}
 		</div>
 	);

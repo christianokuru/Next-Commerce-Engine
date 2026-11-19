@@ -19,7 +19,7 @@ export default async function Overview() {
 			<section className="border-b border-rule pb-8">
 				<p className="eyebrow">The last 30 days · {dateOnly(new Date())}</p>
 				<h1 className="display mt-3 text-5xl sm:text-7xl">{formatMoney(d.revenue, cur)}</h1>
-				<p className="mt-4 max-w-2xl font-heading text-lg leading-snug text-muted-foreground sm:text-xl">
+				<p className="mt-4 max-w-2xl text-pretty font-heading text-lg leading-snug text-muted-foreground sm:text-xl">
 					{d.orders ? (
 						<>{d.orders} order{d.orders === 1 ? "" : "s"} placed this month, averaging {formatMoney(aov, cur)}. <span className="text-foreground">{d.toFulfill} {d.toFulfill === 1 ? "is" : "are"} waiting to be packed.</span></>
 					) : "No orders yet — your first sale will appear here."}

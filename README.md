@@ -4,42 +4,65 @@ A lightweight, modular commerce engine (Medusa-inspired) that runs **entirely on
 
 Headless by design: there is no public storefront. Any storefront (Next.js, mobile app…) talks to the **Store API**.
 
-| Concern | Choice | Why it works on Workers |
-|---|---|---|
-| Runtime | Next.js 16 + `@opennextjs/cloudflare` (official C3 template) | Real Next.js compiled to a Worker |
-| DB | Neon Postgres + Drizzle | HTTP driver for queries; short-lived WebSocket `Pool` per transaction (Workers forbid sharing sockets across requests) |
-| Auth | Better Auth (drizzle adapter, DB rate-limit storage) | Web Crypto / `node:crypto` via `nodejs_compat`; no in-memory state |
-| Payments | Paystack, Flutterwave, Stripe via `fetch` + Web Crypto HMAC | No Node SDKs (axios/`crypto.createHmac`) |
-| Email | Resend REST API | Sent after the response via `after()` → `waitUntil` |
-| Cache | Workers KV (tag-versioned) | Settings + public catalog only |
-| Media | R2 originals + Cloudflare Images binding resize/WebP/AVIF | `/media/*` route + edge Cache API |
-| Abuse | Workers Rate Limiting binding + Better Auth limiter | |
-| UI | Tailwind v4 + shadcn/ui, mobile-first, installable PWA | |
+## Quick start (zero config)
 
-## Architecture
+```bash
+npm install
+npm run dev        # → http://localhost:3000/setup
+```
+
+No env file, no database to provision: with `DATABASE_URL` unset, `npm run dev` runs an embedded Postgres (PGlite, saved in `.data/`) and applies migrations automatically. A dev-only auth secret is used, `/setup` needs no token locally, emails print to the terminal, and payment providers show "Missing keys" until you add them. Set `DATABASE_URL` in `.env.local` to develop against Neon instead (migrations still run automatically).
+
+## Architecture (Medusa-style, without the config)
 
 ```
 src/
-  modules/<name>/        # one folder per commerce module
-    schema.ts            #   Drizzle tables owned by the module
-    service.ts           #   business logic (framework-agnostic, unit-tested)
-  modules/payment/providers/  # PaymentProvider interface + paystack/flutterwave/stripe
-  modules/pricing/totals.ts   # pure totals engine (single source of truth for amounts)
-  db/                    # driver (neon-http + ws transactions), schema barrel, relations
-  lib/                   # env, auth, cache (KV), http helpers, validators, crypto, money
-  server/                # session guards (requireAdmin / requireCustomer), store-api helpers
+  modules/<name>/      # isolated commerce modules — own tables, no imports of other modules, no cross-module FKs
+    schema.ts          #   Drizzle tables
+    service.ts         #   data + rules for that module only
+  workflows/           # compose modules: cart, checkout, order, catalog (transactions + compensation steps)
+  queries/             # cross-module reads (store catalog, admin views) via module links
+  subscribers/         # domain event handlers (order.placed → emails, order.shipped …)
+  db/links.ts          # module links (relations between modules for queries)
+  lib/                 # infra: env, auth, cache (KV), http, workflow runner, events, crypto, money
+  server/              # session guards, Admin API auth, input schemas
   app/
-    admin/**             # store-owner dashboard (server components + server actions)
-    account/**           # customer dashboard
-    api/store/**         # public Store API (headless storefront contract)
-    api/webhooks/[provider]
-    api/payments/callback/[provider]
-    media/[...key]       # R2 + Cloudflare Images
+    admin/**           # admin dashboard (server components + server actions)
+    account/**         # customer dashboard
+    api/admin/**       # Admin REST API
+    api/store/**       # Store API (headless storefront contract), incl. /customers/me
+    api/webhooks/[provider], api/payments/callback/[provider], media/[...key]
 ```
 
-Modules: **store settings, products (options/variants/prices/images), categories, collections, inventory (ledger), customers & addresses, carts, shipping zones/rates, promotions, checkout, orders (timeline, fulfillment, cancel), payments & refunds, notifications, media.**
+Modules: **auth (roles, API keys), store (settings, theme), product, inventory, customer, cart, shipping, promotion, order, payment (+ providers), pricing, notification, media.**
+`tests/architecture.test.ts` fails the build if a module imports another module or a schema adds a cross-module foreign key.
 
-Money is always an integer in minor units (kobo/cents). Prices are per variant per currency.
+| Concern | Choice | Why it works on Workers |
+|---|---|---|
+| Runtime | Next.js 16 + `@opennextjs/cloudflare` (official C3 template) | Real Next.js compiled to a Worker |
+| DB | Neon Postgres + Drizzle | HTTP driver for queries; short-lived WebSocket `Pool` per transaction |
+| Auth | Better Auth (+ bearer plugin) | Web Crypto / `node:crypto` via `nodejs_compat`; DB-backed rate limits |
+| Payments | Paystack, Flutterwave, Stripe via `fetch` + Web Crypto HMAC | No Node SDKs |
+| Email | Resend REST | Sent by subscribers after the response (`after()` → `waitUntil`) |
+| Cache / Media / Abuse | KV, R2 + Cloudflare Images, Workers Rate Limiting | Native bindings |
+| UI | Tailwind v4 + shadcn/ui, editorial design system, PWA | Theme is CSS variables — no client theme script |
+
+## Appearance (Admin → Appearance)
+
+Editorial by default (warm newsprint, Fraunces + Inter, hairline rules). Five presets (Editorial, Gazette, Atelier, Noir, Modern) or customise paper/ink/accent colours, headline + body fonts (8 self-hosted fonts), layout (rules or cards), corners and density. Changes preview live across the whole dashboard and apply to both admin and customer dashboards on save. Values are schema-validated before being rendered into CSS.
+
+## Admin REST API
+
+Everything the dashboard does, as JSON (`/api/admin/*`, money in minor units):
+products (+ variants, options), categories, collections, inventory, orders (fulfillment, cancel, refunds, notes), customers, promotions, shipping zones/rates, settings (incl. theme), uploads.
+
+Auth: create a key in **Admin → Settings → API keys** and send `Authorization: Bearer nce_sk_…` (only a SHA-256 hash is stored; revocable; keys can't mint keys). The signed-in dashboard session also works; cookie-auth mutations are rejected from foreign origins.
+
+```bash
+curl -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
+  -d '{"title":"Ankara Shirt","status":"published","variants":[{"prices":[{"currencyCode":"NGN","amount":1500000}],"stock":5}]}' \
+  https://your-app/api/admin/products
+```
 
 ## Payment flow & guarantees
 
@@ -64,21 +87,14 @@ Money is always an integer in minor units (kobo/cents). Prices are per variant p
 | GET | `/api/store/carts/:id/shipping-options` | |
 | POST | `/api/store/carts/:id/shipping-method` `{optionId}` | |
 | POST/DELETE | `/api/store/carts/:id/promotion` `{code}` | rate limited |
+| GET/PATCH | `/api/store/customers/me` | signed-in customer |
+| GET | `/api/store/customers/me/orders`, `/orders/:id` | scoped to the customer |
+| GET/POST/DELETE | `/api/store/customers/me/addresses[/:id]` | |
 | GET/POST | `/api/store/carts/:id/payment` `{provider, cancelUrl?}` → `{redirectUrl}` | rate limited |
 
+Customer auth for storefronts: `POST /api/auth/sign-up/email`, `/sign-in/email` (Better Auth). On another domain, read the `set-auth-token` response header and send it as `Authorization: Bearer <token>`; on the same parent domain, cookies just work.
+
 After payment the shopper is redirected to `{storefrontUrl}/checkout/complete?status=succeeded&order=…&number=…` (or the built-in `/checkout/result` page if no storefront URL is set). Allow browser storefront origins with `STORE_CORS`.
-
-## Local development
-
-```bash
-npm install
-cp .env.example .env.local   # fill DATABASE_URL (a Neon branch), BETTER_AUTH_SECRET, SETUP_TOKEN
-cp .env.local .dev.vars      # same values for wrangler; set APP_URL=http://localhost:8787 here
-npm run db:migrate
-npm run dev                  # http://localhost:3000 → /setup to create the first admin
-```
-
-Workers-runtime preview (real workerd, local KV/R2/Images simulators): `npm run preview`.
 
 ## Tests
 
@@ -86,6 +102,7 @@ Workers-runtime preview (real workerd, local KV/R2/Images simulators): `npm run 
 npm test             # unit + integration (in-process Postgres via PGlite, real migrations)
 npm run test:neon    # checkout suite against real Neon (WebSocket transactions, row locks, concurrency)
 npm run e2e          # Playwright against the running worker (BASE, SETUP_TOKEN, PAYSTACK_SECRET_KEY, WRANGLER_LOG)
+npm run e2e:dev      # zero-config dev: setup, theme, API keys, Admin API, CSRF, Store API, bearer tokens
 npm run e2e:auth     # auth flows on a fresh DB: setup, sign-in/up, verification, reset, change password, revocation, rate limits, RBAC
 ```
 
@@ -98,8 +115,7 @@ npx wrangler login
 # set real values in wrangler.jsonc "vars" (APP_URL, STORE_NAME, EMAIL_FROM, STORE_CORS)
 for s in DATABASE_URL BETTER_AUTH_SECRET SETUP_TOKEN RESEND_API_KEY PAYSTACK_SECRET_KEY \
   FLUTTERWAVE_SECRET_KEY FLUTTERWAVE_WEBHOOK_HASH STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET; do npx wrangler secret put $s; done
-npm run db:migrate
-npm run deploy   # KV namespace + R2 bucket are auto-provisioned on first deploy
+npm run deploy   # runs migrations (DATABASE_URL in .env), builds, deploys; KV + R2 auto-provisioned
 ```
 
 Then configure webhooks to `https://<your-app>/api/webhooks/{paystack|flutterwave|stripe}` (Stripe events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`), open `/setup`, and enable providers in **Admin → Settings**.

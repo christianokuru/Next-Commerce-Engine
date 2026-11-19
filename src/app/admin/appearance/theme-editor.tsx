@@ -128,7 +128,7 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
 		});
 
 	return (
-		<div className="pb-24">
+		<div>
 			<section>
 				<p className="eyebrow mb-3">Presets</p>
 				<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -199,8 +199,8 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
 				</Row>
 			</section>
 
-			<div className="fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-background/95 backdrop-blur lg:left-64">
-				<div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-12">
+			<div className="sticky bottom-0 z-40 -mx-4 mt-6 border-t border-rule bg-background/95 backdrop-blur sm:-mx-6 lg:-mx-12">
+				<div className="flex items-center justify-between gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-12">
 					<p className="text-sm text-muted-foreground">{dirty ? "Unsaved changes — previewing live" : "All changes saved"}</p>
 					<div className="flex gap-2">
 						<Button variant="ghost" disabled={!dirty || pending} onClick={() => setTheme(saved)}><RotateCcw /> Revert</Button>

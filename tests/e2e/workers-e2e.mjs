@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const BASE = process.env.BASE ?? "http://localhost:8787";
 const shots = process.env.SHOTS ?? ".";
-const admin = { name: "Store Admin", email: `admin+${Date.now()}@example.com`, password: "Sup3r-Secret-Pass!" };
+const admin = { name: "Store Admin", email: process.env.ADMIN_EMAIL ?? "e2e-admin@example.com", password: process.env.ADMIN_PASSWORD ?? "Sup3r-Secret-Pass!" };
 const ok = (c, msg) => { if (!c) throw new Error(`FAIL: ${msg}`); console.log(`✓ ${msg}`); };
 const api = async (path, init = {}) => {
 	const r = await fetch(BASE + path, { ...init, headers: { "content-type": "application/json", ...(init.headers ?? {}) } });
@@ -23,23 +23,26 @@ const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, de
 const page = await ctx.newPage();
 page.on("pageerror", (e) => console.log("pageerror:", e.message));
 
-// 1. Bootstrap first admin
-await page.goto(`${BASE}/setup`);
-await page.fill("#token", process.env.SETUP_TOKEN);
-await page.fill("#name", admin.name);
-await page.fill("#email", admin.email);
-await page.fill("#password", admin.password);
-await page.click("button[type=submit]");
-await page.waitForURL(/sign-in/, { timeout: 30000 });
-ok(true, "first admin created via /setup");
+// 1. Bootstrap first admin (skipped when the database already has one)
+const setupRes = await page.goto(`${BASE}/setup`);
+if (setupRes.status() === 200) {
+	await page.fill("#token", process.env.SETUP_TOKEN);
+	await page.fill("#name", admin.name);
+	await page.fill("#email", admin.email);
+	await page.fill("#password", admin.password);
+	await page.click("button[type=submit]");
+	await page.waitForURL(/sign-in/, { timeout: 30000 });
+	ok(true, "first admin created via /setup");
+}
 ok((await fetch(`${BASE}/setup`)).status === 404, "/setup disabled once an admin exists");
+await page.goto(`${BASE}/sign-in`);
 
 // 2. Sign in (Better Auth on Workers: scrypt hashing + DB rate limiter)
 await page.fill("#email", admin.email);
 await page.fill("#password", admin.password);
 await page.click("button[type=submit]");
 await page.waitForURL(/\/admin$/, { timeout: 30000 });
-await page.getByRole("heading", { name: "Overview", exact: true }).waitFor({ timeout: 15000 });
+await page.getByRole("heading", { name: "Latest orders" }).waitFor({ timeout: 15000 });
 ok(true, "admin dashboard renders (mobile viewport)");
 await page.screenshot({ path: `${shots}/admin-overview-mobile.png`, fullPage: true });
 
@@ -54,8 +57,8 @@ ok(true, "store settings saved (server action + KV invalidation)");
 
 // 4. Shipping zone + rate
 await page.goto(`${BASE}/admin/shipping`);
-await page.fill("#name", "Nigeria");
-await page.fill("#countries", "NG");
+await page.locator("form:has(button:has-text('Create zone')) #name").fill("Nigeria");
+await page.locator("form:has(button:has-text('Create zone')) #countries").fill("NG");
 await page.click("text=Create zone");
 await page.getByText("Zone created").waitFor({ timeout: 15000 });
 await page.reload();
