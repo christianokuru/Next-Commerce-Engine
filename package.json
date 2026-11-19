@@ -16,7 +16,8 @@
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "tsx scripts/migrate.mts",
 		"test:neon": "TEST_DATABASE_URL=$DATABASE_URL vitest run tests/checkout.test.ts",
-		"e2e": "node tests/e2e/workers-e2e.mjs"
+		"e2e": "node tests/e2e/workers-e2e.mjs",
+		"e2e:auth": "node tests/e2e/auth-e2e.mjs"
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.9.0",

@@ -14,6 +14,12 @@ export const getSession = cache(async () => {
 	return auth().api.getSession({ headers: h });
 });
 
+/** Admin paths bypass the 5-minute cookie cache: revoked/expired sessions are rejected immediately. */
+const getFreshSession = cache(async () => {
+	const h = await headers();
+	return auth().api.getSession({ headers: h, query: { disableCookieCache: true } });
+});
+
 /** Role is re-read from the DB (not the cookie cache) so demotions apply immediately. */
 const freshRole = cache(async (userId: string) => {
 	const [u] = await db().select({ role: userTable.role }).from(userTable).where(eq(userTable.id, userId));
@@ -21,7 +27,7 @@ const freshRole = cache(async (userId: string) => {
 });
 
 export async function requireAdmin() {
-	const s = await getSession();
+	const s = await getFreshSession();
 	if (!s) redirect("/sign-in?next=/admin");
 	if ((await freshRole(s.user.id)) !== "admin") redirect("/account");
 	return s.user;
@@ -29,7 +35,7 @@ export async function requireAdmin() {
 
 /** For server actions / route handlers: throws instead of redirecting. */
 export async function assertAdmin() {
-	const s = await getSession();
+	const s = await getFreshSession();
 	if (!s) throw new CommerceError("unauthorized", "Sign in required");
 	if ((await freshRole(s.user.id)) !== "admin") throw new CommerceError("forbidden", "Admin access required");
 	return s.user;

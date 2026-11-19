@@ -86,6 +86,7 @@ Workers-runtime preview (real workerd, local KV/R2/Images simulators): `npm run 
 npm test             # unit + integration (in-process Postgres via PGlite, real migrations)
 npm run test:neon    # checkout suite against real Neon (WebSocket transactions, row locks, concurrency)
 npm run e2e          # Playwright against the running worker (BASE, SETUP_TOKEN, PAYSTACK_SECRET_KEY, WRANGLER_LOG)
+npm run e2e:auth     # auth flows on a fresh DB: setup, sign-in/up, verification, reset, change password, revocation, rate limits, RBAC
 ```
 
 Covered: totals/tax/promotions, stock enforcement, idempotent concurrent confirmations (one order), oversell race, tampered amounts, cart edits after payment start, failed payments, refunds (partial/full), cancel + restock, webhook signature/dedupe for all three providers, upload type sniffing, and a browser E2E on workerd (setup → admin → products → R2/Images → Store API → webhooks → customer verification → access control → PWA/headers).
