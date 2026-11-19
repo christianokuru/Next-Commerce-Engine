@@ -10,7 +10,8 @@ import { getCustomerForUser } from "@/modules/customer/service";
 import { CommerceError } from "@/lib/errors";
 
 export const getSession = cache(async () => {
-	return auth().api.getSession({ headers: await headers() });
+	const h = await headers(); // first: opts the route into dynamic rendering before touching secrets
+	return auth().api.getSession({ headers: h });
 });
 
 /** Role is re-read from the DB (not the cookie cache) so demotions apply immediately. */

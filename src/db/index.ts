@@ -34,10 +34,16 @@ const neonDriver: Driver = {
 	},
 	async transaction(fn) {
 		const pool = new Pool({ connectionString: connectionString(), max: 1 });
+		// Without a listener, a socket closing after pool.end() surfaces as an uncaught error on Workers.
+		let ended = false;
+		pool.on("error", (e: Error) => {
+			if (!ended) console.warn("neon pool error", e.message);
+		});
 		try {
 			const wsDb = drizzleWs({ client: pool, schema });
 			return await wsDb.transaction((tx) => fn(tx as unknown as Db));
 		} finally {
+			ended = true;
 			await pool.end().catch(() => {});
 		}
 	},
