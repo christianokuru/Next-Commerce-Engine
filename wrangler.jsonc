@@ -1,6 +1,11 @@
 /**
  * For more details on how to configure Wrangler, refer to:
  * https://developers.cloudflare.com/workers/wrangler/configuration/
+ *
+ * Secrets (set with `wrangler secret put NAME`, never committed):
+ *   DATABASE_URL, BETTER_AUTH_SECRET, SETUP_TOKEN, RESEND_API_KEY,
+ *   PAYSTACK_SECRET_KEY, FLUTTERWAVE_SECRET_KEY, FLUTTERWAVE_WEBHOOK_HASH,
+ *   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
@@ -13,8 +18,8 @@
 		"directory": ".open-next/assets"
 	},
 	"images": {
-		// Enable image optimization
-		// see https://opennext.js.org/cloudflare/howtos/image
+		// Cloudflare Images binding: used for on-the-fly product image resizing (/media route)
+		// and Next.js image optimization. See https://opennext.js.org/cloudflare/howtos/image
 		"binding": "IMAGES"
 	},
 	"services": [
@@ -25,6 +30,18 @@
 			"service": "next-commerce-engine"
 		}
 	],
+	// KV: read-through cache for store settings + public catalog. Auto-provisioned on first deploy.
+	"kv_namespaces": [{ "binding": "CACHE" }],
+	// R2: product media originals. Auto-provisioned on first deploy.
+	"r2_buckets": [{ "binding": "MEDIA", "bucket_name": "next-commerce-media" }],
+	// Workers Rate Limiting: Store API abuse protection (checkout, cart creation, uploads).
+	"ratelimits": [{ "name": "RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 60, "period": 60 } }],
+	"vars": {
+		"APP_URL": "https://next-commerce-engine.example.workers.dev",
+		"STORE_NAME": "My Store",
+		"EMAIL_FROM": "My Store <orders@example.com>",
+		"STORE_CORS": ""
+	},
 	"observability": {
 		"enabled": true
 	}
