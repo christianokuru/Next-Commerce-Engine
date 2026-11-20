@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/app/field";
+import { PasswordField } from "@/components/app/password-field";
 
 export function PasswordForm() {
 	const [busy, setBusy] = useState(false);
@@ -25,8 +25,8 @@ export function PasswordForm() {
 				toast.success("Password changed. Other devices were signed out.");
 			}}
 		>
-			<Field label="Current password" name="currentPassword" type="password" required autoComplete="current-password" />
-			<Field label="New password" name="newPassword" type="password" required minLength={8} autoComplete="new-password" />
+			<PasswordField label="Current password" name="currentPassword" minLength={1} required autoComplete="current-password" />
+			<PasswordField label="New password" name="newPassword" minLength={8} meter required autoComplete="new-password" />
 			<Button type="submit" disabled={busy} className="h-10">Change password</Button>
 		</form>
 	);

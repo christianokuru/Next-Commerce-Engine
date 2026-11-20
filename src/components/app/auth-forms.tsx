@@ -9,6 +9,7 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field } from "./field";
+import { PasswordField } from "./password-field";
 
 function safeNext(n: string | null) {
 	return n && n.startsWith("/") && !n.startsWith("//") ? n : "/";
@@ -61,7 +62,7 @@ export function SignInForm({ google }: { google: boolean }) {
 				}}
 			>
 				<Field label="Email" name="email" type="email" autoComplete="email" required />
-				<Field label="Password" name="password" type="password" autoComplete="current-password" required />
+				<PasswordField label="Password" name="password" autoComplete="current-password" minLength={1} required />
 				<div className="text-right text-sm"><Link className="text-muted-foreground underline" href="/forgot-password">Forgot password?</Link></div>
 				<Submit busy={busy}>Sign in</Submit>
 			</form>
@@ -96,7 +97,7 @@ export function SignUpForm() {
 			>
 				<Field label="Full name" name="name" autoComplete="name" required maxLength={100} />
 				<Field label="Email" name="email" type="email" autoComplete="email" required />
-				<Field label="Password" name="password" type="password" autoComplete="new-password" minLength={8} required hint="At least 8 characters" />
+				<PasswordField label="Password" name="password" autoComplete="new-password" minLength={8} meter required />
 				<Submit busy={busy}>Create account</Submit>
 			</form>
 		</Shell>
@@ -145,7 +146,7 @@ export function ResetPasswordForm() {
 					router.replace("/sign-in");
 				}}
 			>
-				<Field label="New password" name="password" type="password" autoComplete="new-password" minLength={8} required />
+				<PasswordField label="New password" name="password" autoComplete="new-password" minLength={8} meter required />
 				<Submit busy={busy}>Update password</Submit>
 			</form>
 		</Shell>
