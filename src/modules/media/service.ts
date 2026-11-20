@@ -19,7 +19,7 @@ export function sniffImage(bytes: Uint8Array) {
 
 function bucket(): R2Bucket {
 	const b = (bindings() as { MEDIA?: R2Bucket }).MEDIA;
-	if (!b) throw new CommerceError("unexpected", "Media storage (R2) is not configured");
+	if (!b) throw new CommerceError("not_allowed", "Image uploads are not set up yet: enable R2 in Cloudflare and redeploy. You can still use image URLs.");
 	return b;
 }
 

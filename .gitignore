@@ -55,3 +55,6 @@ next-env.d.ts
 
 # SDK build output (copied into storefronts by `npm run sdk:sync`)
 /packages/sdk/dist
+
+# personal test deployment config
+/wrangler.test.jsonc
