@@ -44,6 +44,11 @@ Working list. Tick items as they ship; delete this file once we're satisfied. �
 - [ ] **Returns requests** — customer starts a return; admin approves and refunds.
 - [ ] **Multi-currency display** — USD/GBP/EUR for foreign-client stores.
 
+## Business
+
+- [ ] Lawyer review of `docs/legal/LICENSE-TEMPLATE.md` and `docs/legal/PROPOSAL-CLAUSE.md` (one-time), then use for every client.
+- [ ] Before each handover: fresh copy (no git history), delete `ROADMAP.md` and `docs/legal/PROPOSAL-CLAUSE.md`, add the filled `LICENSE`.
+
 ## Known gaps to verify
 
 - [ ] Real sandbox payment through Paystack, Flutterwave and Stripe (needs keys).
