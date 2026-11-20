@@ -34,3 +34,20 @@ describe("allowed origins", () => {
 		expect(await isAllowedRedirect("https://shop.test.evil.test/")).toBe(false);
 	});
 });
+
+describe("rate limiter", () => {
+	it("fails open when the binding errors (outage never blocks checkout)", async () => {
+		const { rateLimit } = await import("@/lib/http");
+		const g = globalThis as Record<symbol, unknown>;
+		const sym = Symbol.for("__cloudflare-context__");
+		const prev = g[sym];
+		g[sym] = { env: { RATE_LIMITER: { limit: async () => { throw new Error("poisoned stub"); } } }, ctx: {}, cf: {} };
+		try {
+			await expect(rateLimit(new Request("https://e.test"), "cart-create")).resolves.toBeUndefined();
+			g[sym] = { env: { RATE_LIMITER: { limit: async () => ({ success: false }) } }, ctx: {}, cf: {} };
+			await expect(rateLimit(new Request("https://e.test"), "cart-create")).rejects.toMatchObject({ code: "rate_limited" });
+		} finally {
+			g[sym] = prev;
+		}
+	});
+});

@@ -74,6 +74,12 @@ export function clientIp(req: Request) {
 export async function rateLimit(req: Request, bucket: string) {
 	const limiter = (bindings() as { RATE_LIMITER?: RateLimit }).RATE_LIMITER;
 	if (!limiter) return;
-	const { success } = await limiter.limit({ key: `${bucket}:${clientIp(req)}` });
+	let success = true;
+	try {
+		({ success } = await limiter.limit({ key: `${bucket}:${clientIp(req)}` }));
+	} catch (e) {
+		// Fail open: a rate-limiter outage must never take checkout down with it.
+		console.error("rate limiter unavailable", e);
+	}
 	if (!success) throw new CommerceError("rate_limited", "Too many requests, slow down");
 }
