@@ -3,6 +3,7 @@ import { drizzle as drizzleHttp } from "drizzle-orm/neon-http";
 import { drizzle as drizzleWs } from "drizzle-orm/neon-serverless";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "./schema";
+import { requireEnv } from "@/lib/env";
 
 export { schema };
 export type Schema = typeof schema;
@@ -15,9 +16,7 @@ type Driver = {
 };
 
 function connectionString() {
-	const url = process.env.DATABASE_URL;
-	if (!url) throw new Error("DATABASE_URL is not set");
-	return url;
+	return requireEnv("DATABASE_URL");
 }
 
 /**

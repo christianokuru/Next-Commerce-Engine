@@ -13,6 +13,8 @@ npm run dev        # → http://localhost:3000/setup
 
 No env file, no database to provision: with `DATABASE_URL` unset, `npm run dev` runs an embedded Postgres (PGlite, saved in `.data/`) and applies migrations automatically. A dev-only auth secret is used, `/setup` needs no token locally, emails print to the terminal, and payment providers show "Missing keys" until you add them. Set `DATABASE_URL` in `.env.local` to develop against Neon instead (migrations still run automatically).
 
+**Errors about `DATABASE_URL` or `BETTER_AUTH_SECRET`?** You're not on `npm run dev` (e.g. `npm start`, `npm run preview`, or a production build), or `.env.local` holds a wrong Neon URL. Locally, use `npm run dev` and either delete `.env.local` or remove its `DATABASE_URL` line. Placeholder values copied from `.env.example` are ignored automatically.
+
 ## Architecture (Medusa-style, without the config)
 
 ```

@@ -7,14 +7,25 @@ import path from "node:path";
 import { mkdirSync } from "node:fs";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { schema, setDriver, type Db } from "./index";
+import { env } from "@/lib/env";
 
 export async function setupDevDatabase() {
 	const migrationsFolder = path.join(process.cwd(), "drizzle");
-	if (process.env.DATABASE_URL) {
+	const url = env("DATABASE_URL");
+	if (url && !/neon\.tech|neon\.build/.test(url)) {
+		console.warn("▲ commerce: DATABASE_URL is not a Neon URL, ignoring it and using the local database.");
+	} else if (url) {
 		const { neon } = await import("@neondatabase/serverless");
 		const { drizzle } = await import("drizzle-orm/neon-http");
 		const { migrate } = await import("drizzle-orm/neon-http/migrator");
-		await migrate(drizzle(neon(process.env.DATABASE_URL)), { migrationsFolder });
+		try {
+			await migrate(drizzle(neon(url)), { migrationsFolder });
+		} catch (e) {
+			throw new Error(
+				`Could not connect to DATABASE_URL (${(e as Error).message}). ` +
+					"Fix the Neon URL in .env.local, or delete that line to use the built-in local database.",
+			);
+		}
 		console.log("▲ commerce: migrations applied to DATABASE_URL");
 		return;
 	}
