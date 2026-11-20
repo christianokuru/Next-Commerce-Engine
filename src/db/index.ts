@@ -3,7 +3,7 @@ import { drizzle as drizzleHttp } from "drizzle-orm/neon-http";
 import { drizzle as drizzleWs } from "drizzle-orm/neon-serverless";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "./schema";
-import { requireEnv } from "@/lib/env";
+import { env, requireEnv } from "@/lib/env";
 
 export { schema };
 export type Schema = typeof schema;
@@ -16,6 +16,12 @@ type Driver = {
 };
 
 function connectionString() {
+	const err = (globalThis as { __nceDevDbError?: string }).__nceDevDbError;
+	if (process.env.NODE_ENV === "development") {
+		if (err) throw new Error(`Local database failed to start. Cause:\n${err}`);
+		if (!env("DATABASE_URL"))
+			throw new Error("Local database is not ready. Restart `npm run dev` and check the terminal for a line starting with ▲ commerce.");
+	}
 	return requireEnv("DATABASE_URL");
 }
 

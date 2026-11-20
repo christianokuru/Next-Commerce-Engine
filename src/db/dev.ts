@@ -4,7 +4,7 @@
  *  - DATABASE_URL empty → run an embedded Postgres (PGlite) persisted in ./.data/pglite
  */
 import path from "node:path";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, renameSync, statSync } from "node:fs";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { schema, setDriver, type Db } from "./index";
 import { env } from "@/lib/env";
@@ -33,10 +33,32 @@ export async function setupDevDatabase() {
 	const { drizzle } = await import("drizzle-orm/pglite");
 	const { migrate } = await import("drizzle-orm/pglite/migrator");
 	const dataDir = path.join(process.cwd(), ".data", "pglite");
-	mkdirSync(dataDir, { recursive: true });
-	const client = new PGlite(dataDir);
-	const d = drizzle({ client, schema });
-	await migrate(d, { migrationsFolder });
+
+	const open = async () => {
+		mkdirSync(dataDir, { recursive: true });
+		const client = new PGlite(dataDir);
+		try {
+			const d = drizzle({ client, schema });
+			await migrate(d, { migrationsFolder });
+			return d;
+		} catch (e) {
+			await client.close().catch(() => {});
+			throw e;
+		}
+	};
+
+	let d: Awaited<ReturnType<typeof open>>;
+	try {
+		d = await open();
+	} catch (e) {
+		if (!existsSync(dataDir) || !statSync(dataDir).isDirectory()) throw e;
+		// Usually a half-created database from an interrupted first run: set it aside (not deleted) and start fresh.
+		const backup = `${dataDir}-broken-${Date.now()}`;
+		console.warn(`▲ commerce: local database failed to open (${(e as Error).message}). Moved it to ${backup} and starting fresh.`);
+		renameSync(dataDir, backup);
+		d = await open();
+	}
+
 	// Single connection: while a transaction is open, route db() calls made inside it to the transaction.
 	const als = new AsyncLocalStorage<Db>();
 	setDriver({
