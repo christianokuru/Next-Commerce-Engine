@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-const COMMON = /^(password|qwerty|letmein|welcome|admin|iloveyou|abc123|monkey|dragon)|1234|(.)\2{3,}/i;
+// Patterns cracking tools try first: common words, keyboard rows, sequences, repeats.
+const COMMON = /password|qwerty|asdf|zxcv|letmein|welcome|admin|iloveyou|monkey|dragon|1234|abcd|(.)\1{3,}/i;
 const LEVELS = [
 	{ label: "Too short", color: "bg-destructive" },
 	{ label: "Weak", color: "bg-destructive" },
@@ -20,7 +21,7 @@ export function passwordScore(pw: string, minLength: number) {
 	if (pw.length < minLength) return 0;
 	const variety = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((r) => r.test(pw)).length;
 	let s = 1 + (pw.length >= minLength + 4 ? 1 : 0) + (variety >= 3 ? 1 : 0) + (pw.length >= 16 || variety === 4 ? 1 : 0);
-	if (COMMON.test(pw)) s = Math.min(s, 1);
+	if (COMMON.test(pw)) s = Math.min(s, 2);
 	return Math.min(s, 4);
 }
 
@@ -38,6 +39,7 @@ export function PasswordField({ label, name, minLength = 8, meter, className, ..
 	const [value, setValue] = useState("");
 	const score = passwordScore(value, minLength);
 	const level = LEVELS[score];
+	const common = value.length >= minLength && COMMON.test(value);
 	const checks = [
 		{ ok: value.length >= minLength, text: `${minLength}+ characters` },
 		{ ok: /[a-z]/.test(value) && /[A-Z]/.test(value), text: "Upper & lower case" },
@@ -95,6 +97,11 @@ export function PasswordField({ label, name, minLength = 8, meter, className, ..
 							</li>
 						))}
 					</ul>
+					{common && (
+						<p className="text-xs text-muted-foreground">
+							Contains a common pattern (like qwerty, 1234 or abcd) that attackers guess first. Mix in an unrelated word to make it strong.
+						</p>
+					)}
 				</div>
 			)}
 		</div>
