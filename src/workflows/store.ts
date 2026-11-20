@@ -2,7 +2,7 @@
 import * as authModule from "@/modules/auth/service";
 import { updateSettings, type SettingsUpdate } from "@/modules/store/service";
 import { CommerceError } from "@/lib/errors";
-import { allowedProviders, currentPlan, hasFeature, limits, planName } from "@/lib/plan";
+import { allowedProviders, hasFeature, limits } from "@/lib/plan";
 
 /** Settings update with plan rules: one currency below Advanced; only the region's payment providers. */
 export async function updateStoreSettings(input: SettingsUpdate) {
@@ -15,7 +15,7 @@ export async function updateStoreSettings(input: SettingsUpdate) {
 	if (next.paymentProviders) {
 		const allowed = allowedProviders();
 		const blocked = next.paymentProviders.filter((p) => !allowed.includes(p));
-		if (blocked.length) throw new CommerceError("plan_required", `${blocked.join(", ")} is not enabled for this store. Available: ${allowed.join(", ")}.`);
+		if (blocked.length) throw new CommerceError("not_allowed", `${blocked.join(", ")} is not available for this store.`);
 	}
 	return updateSettings(next);
 }
@@ -26,7 +26,7 @@ export async function setStaffRole(actorId: string, email: string, role: "admin"
 		const max = limits().staff;
 		const admins = await authModule.listAdmins();
 		if (Number.isFinite(max) && admins.length >= max && !admins.some((a) => a.email.toLowerCase() === email.toLowerCase()))
-			throw new CommerceError("plan_required", `Your ${planName(currentPlan())} plan includes ${max} staff account${max === 1 ? "" : "s"}. Upgrade for more.`, { limit: "staff" });
+			throw new CommerceError("plan_required", `Your plan includes ${max} staff account${max === 1 ? "" : "s"}.`, { limit: "staff" });
 	}
 	await authModule.setRole(actorId, email, role);
 }

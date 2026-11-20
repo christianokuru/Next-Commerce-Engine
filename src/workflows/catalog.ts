@@ -3,7 +3,7 @@ import { transaction } from "@/db";
 import * as product from "@/modules/product/service";
 import * as inventory from "@/modules/inventory/service";
 import { deleteImage } from "@/modules/media/service";
-import { currentPlan, hasFeature, limits, planName } from "@/lib/plan";
+import { hasFeature, limits } from "@/lib/plan";
 import { CommerceError } from "@/lib/errors";
 
 export type NewVariant = product.VariantInput & inventory.ItemSettings & { stock?: number };
@@ -14,7 +14,7 @@ const untracked = (v: NewVariant): NewVariant => (hasFeature("inventoryTracking"
 export async function createProduct(input: Omit<product.ProductInput, "variants"> & { variants?: NewVariant[] }) {
 	const max = limits().products;
 	if (Number.isFinite(max) && (await product.countProducts()) >= max)
-		throw new CommerceError("plan_required", `Your ${planName(currentPlan())} plan includes up to ${max} products. Upgrade to Standard for unlimited products.`, { limit: "products" });
+		throw new CommerceError("plan_required", `Your plan includes up to ${max} products.`, { limit: "products" });
 	const variants = (input.variants ?? []).map(untracked);
 	return transaction(async (tx) => {
 		const { id, variantIds } = await product.createProduct({ ...input, variants }, tx);

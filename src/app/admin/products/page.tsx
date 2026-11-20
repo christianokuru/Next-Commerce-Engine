@@ -7,7 +7,7 @@ import { listProductsWithStock } from "@/queries/admin";
 import type { ProductStatus } from "@/modules/product/service";
 import { imageUrl } from "@/modules/media/service";
 import { countProducts } from "@/modules/product/service";
-import { currentPlan, limits, planName } from "@/lib/plan";
+import { limits } from "@/lib/plan";
 
 export const metadata = { title: "Products" };
 const LIMIT = 20;
@@ -25,9 +25,9 @@ export default async function Products({ searchParams }: { searchParams: Promise
 			<PageHeader
 				eyebrow="Catalogue"
 				title="Products"
-				description={capped ? `${total} of ${max} products used on your ${planName(currentPlan())} plan.${full ? " Upgrade to Standard for unlimited products." : ""}` : `${count} products in the catalogue.`}
+				description={capped ? `${total} of ${max} products used.` : `${count} products in the catalogue.`}
 				actions={full
-					? <Link href="/admin/settings#plan" className={buttonVariants({ variant: "outline", className: "h-10" })}>Product limit reached</Link>
+					? <span className={buttonVariants({ variant: "outline", className: "pointer-events-none h-10 opacity-70" })}>Product limit reached</span>
 					: <Link href="/admin/products/new" className={buttonVariants({ className: "h-10" })}><Plus /> New product</Link>}
 			/>
 			<FilterBar>

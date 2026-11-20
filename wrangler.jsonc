@@ -41,8 +41,6 @@
 		"PLAN": "standard",
 		// africa → NGN + Paystack/Flutterwave · international → USD + Stripe. Override providers with ALLOWED_PAYMENT_PROVIDERS.
 		"REGION": "africa",
-		// Shown on locked features: your email, WhatsApp number or website.
-		"UPGRADE_CONTACT": "",
 		"APP_URL": "https://next-commerce-engine.example.workers.dev",
 		"STORE_NAME": "My Store",
 		"EMAIL_FROM": "My Store <orders@example.com>",

@@ -5,12 +5,12 @@ import { PageHeader, EmptyState } from "@/components/app/ui-bits";
 import { listInventory } from "@/queries/admin";
 import { adjustStockAction } from "../actions";
 import { hasFeature } from "@/lib/plan";
-import { PlanLocked } from "@/components/app/plan";
+import { notFound } from "next/navigation";
 
 export const metadata = { title: "Inventory" };
 
 export default async function Inventory({ searchParams }: { searchParams: Promise<{ low?: string }> }) {
-	if (!hasFeature("inventoryTracking")) return <PlanLocked feature="inventoryTracking" eyebrow="Catalogue" title="Inventory" />;
+	if (!hasFeature("inventoryTracking")) notFound(); // not in this plan: the page doesn't exist
 	const low = (await searchParams).low === "1";
 	const rows = await listInventory({ lowStockOnly: low });
 	return (

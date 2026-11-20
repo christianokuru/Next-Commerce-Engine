@@ -11,7 +11,7 @@ import { getSettingsUncached } from "@/modules/store/service";
 import { allProviders } from "@/modules/payment/providers";
 import { appUrl } from "@/lib/env";
 import { revokeApiKeyAction, setAdminRoleAction, updateSettingsAction } from "../actions";
-import { LockedNote, PlanCard } from "@/components/app/plan";
+import { PlanCard } from "@/components/app/plan";
 import { allowedProviders, hasFeature, limits } from "@/lib/plan";
 
 export const metadata = { title: "Settings" };
@@ -49,14 +49,13 @@ export default async function SettingsPage() {
 									: <input type="hidden" name="currencies" value={s.defaultCurrency} />}
 								<Field label="Tax rate (%)" name="taxRate" inputMode="decimal" defaultValue={String(s.taxRateBps / 100)} />
 							</div>
-							{!multiCurrency && <LockedNote feature="multiCurrency" />}
 							<CheckboxField label="Prices include tax" name="taxInclusive" defaultChecked={s.taxInclusive} hint="Typical for NGN (VAT-inclusive pricing)" />
 						</CardContent>
 					</Card>
 					<Card>
 						<CardHeader>
 							<CardTitle>Payment providers</CardTitle>
-							<CardDescription>API keys are Worker secrets. Webhook URL: <code className="break-all">{appUrl()}/api/webhooks/&#123;provider&#125;</code></CardDescription>
+							<CardDescription>Provider secret keys are set on the server by your developer. Webhook URL: <code className="break-all">{appUrl()}/api/webhooks/&#123;provider&#125;</code></CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-3">
 							{providers.map((p) => (
@@ -91,13 +90,14 @@ export default async function SettingsPage() {
 					</CardContent>
 				</Card>
 
+				{apiKeys && (
 				<Card className="h-fit">
 					<CardHeader>
 						<CardTitle>API keys</CardTitle>
 						<CardDescription>For the Admin REST API (<code>/api/admin/*</code>). Send as <code>Authorization: Bearer nce_sk_…</code>.</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						{apiKeys ? <ApiKeyForm /> : <LockedNote feature="apiKeys" />}
+						<ApiKeyForm />
 						<ul className="ledger text-sm">
 							{keys.map((k) => (
 								<li key={k.id} className="flex items-center justify-between gap-2 py-2.5">
@@ -105,7 +105,7 @@ export default async function SettingsPage() {
 										<p className={k.revokedAt ? "text-muted-foreground line-through" : "font-medium"}>{k.name}</p>
 										<p className="font-mono text-[11px] text-muted-foreground">{k.prefix}… · {k.lastUsedAt ? `used ${dateOnly(k.lastUsedAt)}` : "never used"}</p>
 									</div>
-									{!k.revokedAt && apiKeys && (
+									{!k.revokedAt && (
 										<ActionForm action={revokeApiKeyAction} confirm={`Revoke ${k.name}? Integrations using it will stop working.`} className="space-y-0">
 											<input type="hidden" name="id" value={k.id} />
 											<Button type="submit" variant="ghost" size="sm" className="text-destructive">Revoke</Button>
@@ -117,6 +117,7 @@ export default async function SettingsPage() {
 						</ul>
 					</CardContent>
 				</Card>
+				)}
 				</div>
 			</div>
 		</>

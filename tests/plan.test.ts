@@ -79,7 +79,7 @@ describe("Starter enforcement", () => {
 		expect((await cartFlows.applyPromotion(cart.id, "TEN")).totals.discountTotal).toBe(1000);
 
 		setPlan("starter");
-		await expect(cartFlows.applyPromotion(cart.id, "TEN")).rejects.toThrow(/Standard plan/);
+		await expect(cartFlows.applyPromotion(cart.id, "TEN")).rejects.toThrow(/^Not found$/);
 		const c = await cartFlows.retrieveCart(cart.id);
 		expect(c.promotion).toBeNull();
 		expect(c.totals.discountTotal).toBe(0);
@@ -119,8 +119,23 @@ describe("Settings rules", () => {
 		setPlan("standard");
 		const s = await updateStoreSettings({ defaultCurrency: "NGN", currencies: ["NGN", "USD"] });
 		expect(s.currencies).toEqual(["NGN"]);
-		await expect(updateStoreSettings({ paymentProviders: ["stripe"] })).rejects.toThrow(/stripe is not enabled/);
+		await expect(updateStoreSettings({ paymentProviders: ["stripe"] })).rejects.toThrow(/stripe is not available/);
 		setPlan("advanced");
 		expect((await updateStoreSettings({ defaultCurrency: "NGN", currencies: ["NGN", "USD"] })).currencies).toEqual(["NGN", "USD"]);
+	});
+});
+
+describe("Hidden, not locked", () => {
+	it("only available (in-plan, built) features are exposed", async () => {
+		const { availableFeatures } = await import("@/lib/plan");
+		const { visibleGuide } = await import("@/content/guide");
+		expect(availableFeatures("starter")).toEqual([]);
+		expect(availableFeatures("standard")).toEqual(["customerAccounts", "discounts", "inventoryTracking", "collections", "apiKeys"]);
+		expect(availableFeatures("advanced")).toContain("multiCurrency");
+		expect(availableFeatures("advanced")).not.toContain("reviews"); // not built yet → hidden
+		const ids = visibleGuide((f) => availableFeatures("starter").includes(f), limits("starter")).flatMap((s) => s.entries.map((e) => e.id));
+		expect(ids).not.toContain("discounts");
+		expect(ids).not.toContain("inventory");
+		expect(JSON.stringify(visibleGuide((f) => availableFeatures("starter").includes(f), limits("starter")))).not.toMatch(/Standard|Advanced|Starter|upgrade/i);
 	});
 });

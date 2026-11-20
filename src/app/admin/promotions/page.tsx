@@ -8,12 +8,12 @@ import { listPromotions } from "@/modules/promotion/service";
 import { getSettings } from "@/modules/store/service";
 import { createPromotionAction, deletePromotionAction, togglePromotionAction } from "../actions";
 import { hasFeature } from "@/lib/plan";
-import { PlanLocked } from "@/components/app/plan";
+import { notFound } from "next/navigation";
 
 export const metadata = { title: "Promotions" };
 
 export default async function Promotions() {
-	if (!hasFeature("discounts")) return <PlanLocked feature="discounts" eyebrow="Marketing" title="Promotions" />;
+	if (!hasFeature("discounts")) notFound(); // not in this plan: the page doesn't exist
 	const [promos, settings] = await Promise.all([listPromotions(), getSettings()]);
 	return (
 		<>

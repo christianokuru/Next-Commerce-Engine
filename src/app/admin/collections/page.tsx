@@ -7,12 +7,12 @@ import { PageHeader, EmptyState } from "@/components/app/ui-bits";
 import { listCollections } from "@/modules/product/service";
 import { createCollectionAction, deleteCollectionAction } from "../actions";
 import { hasFeature } from "@/lib/plan";
-import { PlanLocked } from "@/components/app/plan";
+import { notFound } from "next/navigation";
 
 export const metadata = { title: "Collections" };
 
 export default async function Collections() {
-	if (!hasFeature("collections")) return <PlanLocked feature="collections" eyebrow="Catalogue" title="Collections" />;
+	if (!hasFeature("collections")) notFound(); // not in this plan: the page doesn't exist
 	const cols = await listCollections();
 	return (
 		<>

@@ -3,24 +3,16 @@
 
 How every part of your store works. The same guide is in your dashboard under **Guide**.
 
-## Plans at a glance
+## What's included
 
-| | Starter | Standard | Advanced | Multi-vendor |
-|---|---|---|---|---|
-| Products | 50 | Unlimited | Unlimited | Unlimited |
-| Staff accounts | 1 | 3 | 10 | Unlimited |
-| Orders, payments, shipping, order emails, appearance | ✓ | ✓ | ✓ | ✓ |
-| Customer accounts | – | ✓ | ✓ | ✓ |
-| Discount codes | – | ✓ | ✓ | ✓ |
-| Stock tracking | – | ✓ | ✓ | ✓ |
-| Collections | – | ✓ | ✓ | ✓ |
-| API keys | – | ✓ | ✓ | ✓ |
-| Advanced promotions | – | – | Soon | Soon |
-| Multiple currencies | – | – | ✓ | ✓ |
-| Delivery integration | – | – | Soon | Soon |
-| Product reviews | – | – | Soon | Soon |
-| Analytics | – | – | Soon | Soon |
-| Multi-vendor marketplace | – | – | – | Soon |
+- Products: Unlimited
+- Staff accounts: 3
+- Orders & payments, shipping & order emails, products & categories, appearance
+- Customer accounts
+- Discount codes
+- Stock tracking
+- Collections
+- API keys
 
 ## Getting started
 
@@ -66,8 +58,6 @@ Everything you sell. Each product has a title, description, images, a status, an
 > Draft products are never shown to customers.
 >
 > Archived products disappear from the shop but keep their order history.
->
-> Starter includes up to 50 products. Standard and above are unlimited.
 
 ### Categories
 
@@ -77,7 +67,7 @@ Group products the way customers browse: Men, Women, Accessories. A product can 
 2. Open a product and tick its categories.
 
 
-### Collections · _Standard and above_
+### Collections
 
 Curated groups for campaigns and seasons, like “New arrivals” or “Black Friday picks”. Your storefront can feature them on the home page.
 
@@ -85,7 +75,7 @@ Curated groups for campaigns and seasons, like “New arrivals” or “Black Fr
 2. Open a product and choose its collection.
 
 
-### Stock tracking · _Standard and above_
+### Stock tracking
 
 Track how many of each variant you have. Stock goes down automatically when an order is paid and back up if you cancel. The shop stops selling items that run out.
 
@@ -96,10 +86,8 @@ Track how many of each variant you have. Stock goes down automatically when an o
 > Allow backorders on a variant to keep selling when it hits zero.
 >
 > Two customers can never buy the last item at the same time; the engine reserves stock safely.
->
-> Without stock tracking (Starter), every published item is always available.
 
-### Discount codes · _Standard and above_
+### Discount codes
 
 Codes customers enter at checkout: a percentage off, a fixed amount off, or free shipping.
 
@@ -109,12 +97,6 @@ Codes customers enter at checkout: a percentage off, a fixed amount off, or free
 4. Save. Switch it off any time without deleting it.
 
 > Usage is counted only when payment succeeds, so abandoned carts never use up a limited code.
-
-### Advanced promotions · _Advanced and above, coming soon_
-
-Automatic sales with no code, buy X get Y, discounts on specific products or categories, one use per customer, and gift cards.
-
-
 
 ## Orders & payments
 
@@ -165,20 +147,6 @@ Where you deliver and what it costs. A zone is a group of countries; each zone h
 3. Optional: “Free over” makes an option free above an order amount.
 
 
-### Multiple currencies · _Advanced and above_
-
-Sell in more than one currency (for example NGN and USD). Each product has its own price per currency, and customers pay in the currency they choose.
-
-1. Go to Settings → add currencies.
-2. Open each product's variants and enter a price for each currency.
-
-
-### Delivery integration · _Advanced and above, coming soon_
-
-Live delivery rates and tracking from couriers such as GIG, Sendbox and Kwik, booked from the order page.
-
-
-
 ## Customers
 
 ### Customer list
@@ -187,22 +155,9 @@ Everyone who has ordered from you, with their contact details, addresses and ord
 
 
 
-### Customer accounts · _Standard and above_
+### Customer accounts
 
 Customers can sign up, verify their email, and use their own dashboard to see orders, save addresses and manage their profile.
-
-
-> Without accounts (Starter), customers check out as guests and get every update by email.
-
-### Product reviews · _Advanced and above, coming soon_
-
-Verified-buyer star ratings and reviews, with approval before they go live.
-
-
-
-### Analytics · _Advanced and above, coming soon_
-
-Best sellers, revenue by period, repeat customers and discount performance, with CSV export.
 
 
 
@@ -215,21 +170,15 @@ Give team members their own login to the dashboard. Each person signs in with th
 1. Ask the person to create an account first.
 2. Go to Settings → Team, enter their email and choose Admin.
 
-> Starter includes 1 staff account, Standard 3, Advanced 10.
+> Your plan includes 3 staff accounts.
 
-### API keys · _Standard and above_
+### API keys
 
 Secure keys that let other tools (an accounting app, a warehouse system, a custom script) read and manage your store.
 
 1. Go to Settings → API keys → name the key → Create.
 2. Copy it straight away; it's only shown once.
 3. Revoke a key instantly if it's no longer needed.
-
-
-### Multi-vendor marketplace · _Multi-vendor plan, coming soon_
-
-Let other sellers join your store with their own dashboards. Payments are split automatically and you earn a commission on each sale.
-
 
 
 ## Security

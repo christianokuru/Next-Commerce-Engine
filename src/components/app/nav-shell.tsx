@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, LogOut, Lock } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
-export type NavItem = { href: string; label: string; icon: React.ReactNode; exact?: boolean; locked?: boolean };
+export type NavItem = { href: string; label: string; icon: React.ReactNode; exact?: boolean };
 type ShellProps = {
 	title: string;
 	edition: string;
@@ -39,8 +39,7 @@ function NavLinks({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => 
 						)}
 					>
 						<span className={cn("w-6 text-[11px] tabular-nums", active ? "text-brand" : "text-muted-foreground/70")}>{String(n + 1).padStart(2, "0")}</span>
-						<span className={cn("flex-1", active && "font-medium", i.locked && "opacity-60")}>{i.label}</span>
-						{i.locked && <Lock aria-label="Not in your plan" className="size-3 opacity-50" />}
+						<span className={cn("flex-1", active && "font-medium")}>{i.label}</span>
 						<span className={cn("opacity-0 transition-opacity [&_svg]:size-3.5 group-hover:opacity-60", active && "text-brand opacity-100")}>{i.icon}</span>
 					</Link>
 				);

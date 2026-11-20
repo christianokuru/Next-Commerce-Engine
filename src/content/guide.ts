@@ -2,7 +2,7 @@
  * Store-owner guide: plain-language docs for every feature.
  * Rendered in Admin → Guide and exported to docs/FEATURES.md (`npm run docs`).
  * `feature` links an entry to its plan gate; entries without one are in every plan.
- * "Coming soon" comes from FEATURES[feature].soon in src/lib/plan.ts.
+ * Only entries for features the store has (and that are built) are shown; plan limits are added at render time.
  */
 import type { Feature } from "@/lib/plan";
 
@@ -64,7 +64,6 @@ export const GUIDE: GuideSection[] = [
 				tips: [
 					"Draft products are never shown to customers.",
 					"Archived products disappear from the shop but keep their order history.",
-					"Starter includes up to 50 products. Standard and above are unlimited.",
 				],
 			},
 			{
@@ -93,7 +92,6 @@ export const GUIDE: GuideSection[] = [
 				tips: [
 					"Allow backorders on a variant to keep selling when it hits zero.",
 					"Two customers can never buy the last item at the same time; the engine reserves stock safely.",
-					"Without stock tracking (Starter), every published item is always available.",
 				],
 			},
 			{
@@ -192,7 +190,6 @@ export const GUIDE: GuideSection[] = [
 				title: "Customer accounts",
 				feature: "customerAccounts",
 				summary: "Customers can sign up, verify their email, and use their own dashboard to see orders, save addresses and manage their profile.",
-				tips: ["Without accounts (Starter), customers check out as guests and get every update by email."],
 			},
 			{
 				id: "reviews",
@@ -216,7 +213,6 @@ export const GUIDE: GuideSection[] = [
 				title: "Staff accounts",
 				summary: "Give team members their own login to the dashboard. Each person signs in with their own email, so you always know who did what.",
 				steps: ["Ask the person to create an account first.", "Go to Settings → Team, enter their email and choose Admin."],
-				tips: ["Starter includes 1 staff account, Standard 3, Advanced 10."],
 			},
 			{
 				id: "api-keys",
@@ -252,4 +248,16 @@ export const GUIDE: GuideSection[] = [
 	},
 ];
 
-export const guideEntry = (feature: Feature) => GUIDE.flatMap((s) => s.entries).find((e) => e.feature === feature);
+/** The guide as this store sees it: features outside the plan (or not built yet) are left out entirely. */
+export function visibleGuide(isAvailable: (f: Feature) => boolean, lim: { products: number; staff: number }): GuideSection[] {
+	const extra: Record<string, string | null> = {
+		products: Number.isFinite(lim.products) ? `Your plan includes up to ${lim.products} products.` : null,
+		team: Number.isFinite(lim.staff) ? `Your plan includes ${lim.staff} staff account${lim.staff === 1 ? "" : "s"}.` : null,
+	};
+	return GUIDE.map((s) => ({
+		...s,
+		entries: s.entries
+			.filter((e) => !e.feature || isAvailable(e.feature))
+			.map((e) => (extra[e.id] ? { ...e, tips: [...(e.tips ?? []), extra[e.id]!] } : e)),
+	})).filter((s) => s.entries.length);
+}

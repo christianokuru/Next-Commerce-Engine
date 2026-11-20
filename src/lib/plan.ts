@@ -58,20 +58,17 @@ export function features(plan: Plan = currentPlan()) {
 	return Object.fromEntries(Object.keys(FEATURES).map((f) => [f, hasFeature(f as Feature, plan)])) as Record<Feature, boolean>;
 }
 
-/** Server-side gate: throws a 403 with a friendly upgrade message. */
+/** Usable right now: in the plan AND built. Everything else is hidden from the dashboard, docs and APIs. */
+export const isAvailable = (f: Feature, plan: Plan = currentPlan()) => hasFeature(f, plan) && !isSoon(f);
+export const availableFeatures = (plan: Plan = currentPlan()) => (Object.keys(FEATURES) as Feature[]).filter((f) => isAvailable(f, plan));
+
+/**
+ * Server-side gate. Features outside the plan behave as if they don't exist:
+ * a plain 404, no hint that an upgrade would unlock them.
+ */
 export function requireFeature(f: Feature) {
-	if (!hasFeature(f)) {
-		const { label, minPlan } = FEATURES[f];
-		throw new CommerceError("plan_required", `${label} is available on the ${planName(minPlan)} plan and above.`, { feature: f, requiredPlan: minPlan });
-	}
+	if (!hasFeature(f)) throw new CommerceError("not_found", "Not found");
 }
-
-export function nextPlan(plan: Plan = currentPlan()): Plan | null {
-	return PLANS[rank(plan) + 1] ?? null;
-}
-
-/** Who the store owner contacts to upgrade (email, phone, WhatsApp or URL). */
-export const upgradeContact = () => env("UPGRADE_CONTACT") ?? null;
 
 // ---------- Regions ----------
 
