@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { CommerceError } from "./errors";
-import { bindings, env } from "./env";
+import { bindings } from "./env";
+import { isCorsOrigin } from "./origins";
 
-function corsHeaders(req: Request): Record<string, string> {
+export function corsHeaders(req: Request): Record<string, string> {
 	const origin = req.headers.get("origin");
-	const allowed = (env("STORE_CORS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-	if (!origin || !allowed.includes(origin)) return {};
+	if (!isCorsOrigin(origin)) return {};
 	return {
 		"Access-Control-Allow-Origin": origin,
 		"Access-Control-Allow-Credentials": "true",

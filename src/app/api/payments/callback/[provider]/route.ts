@@ -3,6 +3,7 @@ import { PAYMENT_PROVIDERS, type PaymentProviderId } from "@/modules/payment/sch
 import { confirmPayment } from "@/workflows/checkout";
 import { getSettings } from "@/modules/store/service";
 import { appUrl } from "@/lib/env";
+import { getByReference } from "@/modules/payment/service";
 
 /**
  * Shopper lands here after the hosted payment page. Query params are only a hint:
@@ -12,12 +13,18 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
 	const { provider } = await ctx.params;
 	const reference = new URL(req.url).searchParams.get("reference") ?? "";
 	const settings = await getSettings();
+	const valid = PAYMENT_PROVIDERS.includes(provider as PaymentProviderId) && /^nce_[\w-]{10,64}$/.test(reference);
+	// Where to send the shopper: the returnUrl their storefront gave when starting payment (validated then),
+	// else Settings → Storefront URL + /checkout/complete, else the engine's own result page.
+	const p = valid ? await getByReference(provider as PaymentProviderId, reference).catch(() => null) : null;
+	const returnUrl = typeof p?.data?.returnUrl === "string" ? p.data.returnUrl : null;
 	const base = settings.storefrontUrl?.replace(/\/$/, "");
 	const dest = (status: string, extra: Record<string, string> = {}) => {
 		const qs = new URLSearchParams({ status, ...extra }).toString();
-		return NextResponse.redirect(base ? `${base}/checkout/complete?${qs}` : `${appUrl()}/checkout/result?${qs}`, 303);
+		const target = returnUrl ?? (base ? `${base}/checkout/complete` : `${appUrl()}/checkout/result`);
+		return NextResponse.redirect(`${target}${target.includes("?") ? "&" : "?"}${qs}`, 303);
 	};
-	if (!PAYMENT_PROVIDERS.includes(provider as PaymentProviderId) || !/^nce_[\w-]{10,64}$/.test(reference)) return dest("invalid");
+	if (!valid) return dest("invalid");
 	try {
 		const r = await confirmPayment(provider as PaymentProviderId, reference);
 		if (r.status === "succeeded") return dest("succeeded", { order: r.order.id, number: String(r.order.displayId) });

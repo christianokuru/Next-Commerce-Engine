@@ -29,7 +29,7 @@ export async function availableProviders(currency: string) {
  * Start a hosted payment. Amount is ALWAYS computed server-side.
  * Idempotent: repeated calls with an unchanged cart reuse the pending session.
  */
-export async function initiatePayment(cartId: string, providerId: string, opts: { cancelUrl?: string } = {}) {
+export async function initiatePayment(cartId: string, providerId: string, opts: { cancelUrl?: string; returnUrl?: string } = {}) {
 	const provider = getProvider(providerId);
 	if (!provider) throw invalid("Unknown payment provider");
 	const cart = await retrieveCart(cartId);
@@ -43,7 +43,7 @@ export async function initiatePayment(cartId: string, providerId: string, opts: 
 
 	const settings = await getSettings();
 	return runWorkflow("initiate-payment", async (step) => {
-		const p = await step("create-payment", () => payment.createPayment({ cartId, provider: provider.id, amount, currencyCode: cart.currencyCode }),
+		const p = await step("create-payment", () => payment.createPayment({ cartId, provider: provider.id, amount, currencyCode: cart.currencyCode, returnUrl: opts.returnUrl ?? null }),
 			(created) => payment.markFailed(created.id, "Provider initialization failed"));
 		const session = await step("provider-initialize", async () => {
 			try {

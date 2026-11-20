@@ -4,6 +4,8 @@ export async function register() {
 		try {
 			const { setupDevDatabase } = await import("./db/dev");
 			await setupDevDatabase();
+			const { enableTestPayments } = await import("./dev/test-payments");
+			enableTestPayments();
 		} catch (e) {
 			// Keep the server up so pages show the real cause instead of a generic DATABASE_URL error.
 			(globalThis as { __nceDevDbError?: string }).__nceDevDbError = (e as Error)?.stack ?? String(e);

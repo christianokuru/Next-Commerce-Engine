@@ -9,9 +9,9 @@ Working list. Tick items as they ship; delete this file once we're satisfied. �
 ## Developer (building client stores)
 
 - [x] ★ **Tiers & region presets** — `PLAN` (starter/standard/advanced/multivendor) + `REGION` (africa/international); features outside the plan are hidden everywhere (menu, pages, guide, docs, APIs → 404) and enforced on the server; Plan card; client Guide (Admin → Guide, `docs/FEATURES.md`). Next: optional per-client export so their copy of the code only contains what they bought.
-- [ ] ★ **Storefront SDK + skeleton** — each client gets a custom storefront; a typed client (`sdk.cart.add()` etc.) and a minimal PWA, mobile-first skeleton (cart, checkout, account wired to `/api/store/config`) make every custom build faster.
+- [x] ★ **Storefront SDK + skeleton** — `packages/sdk` (typed client + React hooks, edge cases handled, 22 unit tests) and the `storefront-starter` repo (PWA shop, bag, checkout, accounts; 55-check browser E2E incl. Workers runtime). Local test-mode payments and `npm run seed` in the engine.
 - [ ] ★ **One-command deploy** — `npm run setup:cloudflare`: interactively creates Neon DB, KV, R2 and secrets. New client live in ~10 minutes.
-- [ ] **Demo data** — `npm run seed` for sample products/orders (client demos).
+- [x] **Demo data** — `npm run seed` (local dev): demo catalogue, shipping, discount codes.
 - [ ] **Outgoing webhooks** — notify Zapier, Slack, ERPs on order placed/shipped/refunded.
 - [ ] **Plugin slots** — clean extension points for per-client custom fields and logic without touching core, so updates stay easy.
 

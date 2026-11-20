@@ -10,6 +10,7 @@ import { appUrl, env, requireEnv } from "./env";
 import { APIError } from "better-auth/api";
 import { hasFeature } from "./plan";
 import { hasAdmin } from "@/modules/auth/service";
+import { isDevLocalhost, originOf, trustedOrigins } from "./origins";
 
 function storeName() {
 	return env("STORE_NAME") ?? "Store";
@@ -29,7 +30,16 @@ function createAuth() {
 		appName: storeName(),
 		baseURL: appUrl(),
 		secret: authSecret(),
-		trustedOrigins: [appUrl(), ...(env("TRUSTED_ORIGINS")?.split(",").map((s) => s.trim()).filter(Boolean) ?? [])],
+		// Engine + STORE_CORS + TRUSTED_ORIGINS + Settings → Storefront URL (+ localhost in dev): storefront sign-in, email links, reset redirects.
+		trustedOrigins: async (request?: Request) => {
+			const list = await trustedOrigins();
+			if (!request || process.env.NODE_ENV !== "development") return list;
+			// Local storefronts on any localhost port: from the Origin header, or (email links have none) the callback URL.
+			const q = new URL(request.url).searchParams;
+			const extra = [request.headers.get("origin"), ...["callbackURL", "redirectTo", "errorCallbackURL"].map((k) => originOf(q.get(k)))]
+				.filter((o): o is string => Boolean(o) && isDevLocalhost(o!));
+			return [...list, ...extra];
+		},
 		database: drizzleAdapter(db(), {
 			provider: "pg",
 			schema: { user, session, account, verification, rateLimit },

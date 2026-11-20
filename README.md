@@ -9,9 +9,10 @@ Headless by design: there is no public storefront. Any storefront (Next.js, mobi
 ```bash
 npm install
 npm run dev        # → http://localhost:3000/setup
+npm run seed       # optional: demo catalogue, shipping zones and codes (WELCOME10, FREESHIP)
 ```
 
-No env file, no database to provision: with `DATABASE_URL` unset, `npm run dev` runs an embedded Postgres (PGlite, saved in `.data/`) and applies migrations automatically. A dev-only auth secret is used, `/setup` needs no token locally, emails print to the terminal, and payment providers show "Missing keys" until you add them. Set `DATABASE_URL` in `.env.local` to develop against Neon instead (migrations still run automatically).
+No env file, no database to provision: with `DATABASE_URL` unset, `npm run dev` runs an embedded Postgres (PGlite, saved in `.data/`) and applies migrations automatically. A dev-only auth secret is used, `/setup` needs no token locally, and emails print to the terminal. Payment providers without keys run in **test mode** locally: checkout goes to a fake payment page (`/dev/pay`) where you can pay, decline or cancel. With real keys, the real provider is used. Set `DATABASE_URL` in `.env.local` to develop against Neon instead (migrations still run automatically).
 
 **Errors about `DATABASE_URL` or `BETTER_AUTH_SECRET`?** You're not on `npm run dev` (e.g. `npm start`, `npm run preview`, or a production build), or `.env.local` holds a wrong Neon URL. Locally, use `npm run dev` and either delete `.env.local` or remove its `DATABASE_URL` line. Placeholder values copied from `.env.example` are ignored automatically.
 
@@ -89,6 +90,15 @@ curl -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
 4. Idempotency: row locks + `orders.cart_id UNIQUE` + `payments.reference UNIQUE` + `webhook_events(provider,event_id) UNIQUE`. Webhooks are signature-verified (Paystack HMAC-SHA512, Stripe `v1` + timestamp tolerance, Flutterwave `verif-hash`/HMAC) with constant-time comparison.
 5. Anything suspicious (amount mismatch, cart edited after payment start, double payment) marks the payment `requires_action` and surfaces it on the admin overview — **never** a silent order. A race for the last unit creates the order flagged `requires_action` (money was taken) instead of overselling.
 
+## Storefronts (headless)
+
+Each client gets a custom storefront; the engine and dashboards stay the same.
+
+- **SDK:** [`packages/sdk`](packages/sdk/README.md): typed client for the Store API + React hooks, with the cart/checkout/auth edge cases handled. `npm run sdk:sync -- ../my-storefront` copies a fresh build into a storefront.
+- **Starter:** the `storefront-starter` repo: a working, deliberately plain PWA storefront (shop, product pages, bag, checkout, accounts) to restyle per client.
+- **Allow the storefront:** `STORE_CORS=https://clientbrand.com` (Store API + sign-in CORS, trusted origin for email links and payment redirects) and Admin → Settings → Storefront URL. Locally, any `http://localhost:*` origin is allowed.
+- **Payments:** `POST /api/store/carts/:id/payment { provider, returnUrl, cancelUrl }`. Both URLs must be on an allowed origin (no open redirects). After paying, the shopper lands on `returnUrl?status=succeeded&order=…&number=…`.
+
 ## Store API
 
 | Method | Path | |
@@ -108,7 +118,7 @@ curl -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
 | GET/PATCH | `/api/store/customers/me` | signed-in customer |
 | GET | `/api/store/customers/me/orders`, `/orders/:id` | scoped to the customer |
 | GET/POST/DELETE | `/api/store/customers/me/addresses[/:id]` | |
-| GET/POST | `/api/store/carts/:id/payment` `{provider, cancelUrl?}` → `{redirectUrl}` | rate limited |
+| GET/POST | `/api/store/carts/:id/payment` `{provider, returnUrl?, cancelUrl?}` → `{redirectUrl}` | rate limited; URLs must be on an allowed origin |
 
 Customer auth for storefronts: `POST /api/auth/sign-up/email`, `/sign-in/email` (Better Auth). On another domain, read the `set-auth-token` response header and send it as `Authorization: Bearer <token>`; on the same parent domain, cookies just work.
 

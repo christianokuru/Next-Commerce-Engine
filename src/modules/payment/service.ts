@@ -2,7 +2,7 @@
  * Payment module — payment records, refunds, webhook log and provider registry.
  * Orchestration (verify → complete cart → create order) lives in src/workflows/checkout.ts.
  */
-import { and, desc, eq, gte, inArray } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { db, type Db } from "@/db";
 import { payments, refunds, webhookEvents, type PaymentProviderId } from "./schema";
 import { allProviders, supportsCurrency } from "./providers";
@@ -26,17 +26,21 @@ export async function findReusable(cartId: string, provider: PaymentProviderId, 
 	return p && typeof p.data?.redirectUrl === "string" ? p : null;
 }
 
-export async function createPayment(input: { cartId: string; provider: PaymentProviderId; amount: number; currencyCode: string }) {
-	const [p] = await db().insert(payments).values({ id: newId("pay"), reference: `nce_${randomToken(18)}`, status: "pending", ...input }).returning();
+export async function createPayment(input: { cartId: string; provider: PaymentProviderId; amount: number; currencyCode: string; returnUrl?: string | null }) {
+	const { returnUrl, ...row } = input;
+	const [p] = await db().insert(payments).values({ id: newId("pay"), reference: `nce_${randomToken(18)}`, status: "pending", ...row, data: returnUrl ? { returnUrl } : null }).returning();
 	return p;
 }
 
+/** jsonb merge so later writes never drop earlier keys (e.g. returnUrl). */
+const mergeData = (patch: Record<string, unknown>) => sql`coalesce(${payments.data}, '{}'::jsonb) || ${JSON.stringify(patch)}::jsonb`;
+
 export async function setInitialized(id: string, providerReference: string | null, redirectUrl: string) {
-	await db().update(payments).set({ providerReference, data: { redirectUrl } }).where(eq(payments.id, id));
+	await db().update(payments).set({ providerReference, data: mergeData({ redirectUrl }) }).where(eq(payments.id, id));
 }
 
 export async function markFailed(id: string, reason: string, extra?: Record<string, unknown>) {
-	await db().update(payments).set({ status: "failed", failureReason: reason.slice(0, 500), ...(extra ? { data: extra } : {}) })
+	await db().update(payments).set({ status: "failed", failureReason: reason.slice(0, 500), ...(extra ? { data: mergeData(extra) } : {}) })
 		.where(and(eq(payments.id, id), eq(payments.status, "pending")));
 }
 

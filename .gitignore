@@ -52,3 +52,6 @@ next-env.d.ts
 
 # stray local screenshots
 /*.png
+
+# SDK build output (copied into storefronts by `npm run sdk:sync`)
+/packages/sdk/dist
