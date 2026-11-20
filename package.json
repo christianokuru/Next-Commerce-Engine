@@ -15,6 +15,7 @@
 		"test": "vitest run",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "tsx scripts/migrate.mts",
+		"docs": "tsx scripts/docs.mts",
 		"test:neon": "TEST_DATABASE_URL=$DATABASE_URL vitest run tests/checkout.test.ts",
 		"e2e": "node tests/e2e/workers-e2e.mjs",
 		"e2e:auth": "node tests/e2e/auth-e2e.mjs",

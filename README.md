@@ -49,6 +49,33 @@ Modules: **auth (roles, API keys), store (settings, theme), product, inventory, 
 | Cache / Media / Abuse | KV, R2 + Cloudflare Images, Workers Rate Limiting | Native bindings |
 | UI | Tailwind v4 + shadcn/ui, editorial design system, PWA | Theme is CSS variables — no client theme script |
 
+## Plans & regions (one setting per client)
+
+Every client runs the same engine; two Worker vars decide what they bought:
+
+```jsonc
+// wrangler.jsonc → vars
+"PLAN": "standard",        // starter | standard | advanced | multivendor
+"REGION": "africa",        // africa (NGN, Paystack/Flutterwave) | international (USD, Stripe)
+"UPGRADE_CONTACT": "+234…" // shown on locked features (email, WhatsApp number or URL)
+```
+
+| | Starter | Standard ★ | Advanced | Multi-vendor |
+|---|---|---|---|---|
+| Products / staff | 50 / 1 | ∞ / 3 | ∞ / 10 | ∞ / ∞ |
+| Guest checkout, orders, payments, shipping, emails | ✓ | ✓ | ✓ | ✓ |
+| Customer accounts, discount codes, stock tracking, collections, API keys | – | ✓ | ✓ | ✓ |
+| Multi-currency (+ advanced promotions, delivery, reviews, analytics: soon) | – | – | ✓ | ✓ |
+| Vendors, split payments (soon) | – | – | – | ✓ |
+
+- The table lives in `src/lib/plan.ts`. Change a tier there and it applies everywhere.
+- Enforced on the server (dashboard, Admin API, Store API), not just hidden in the UI. Locked pages show an upgrade screen; Settings shows a **Plan** card.
+- Upgrading = change `PLAN`, redeploy. Downgrades never delete data.
+- Unset `PLAN` → `advanced` locally, `starter` in production (never gives features away by accident).
+- Region only sets first-run defaults (currency, providers). `ALLOWED_PAYMENT_PROVIDERS=paystack,stripe` overrides providers.
+
+**Client documentation:** Admin → **Guide** explains every feature in plain language, marked by plan. The same content is exported to [`docs/FEATURES.md`](docs/FEATURES.md) (`npm run docs`; source: `src/content/guide.ts`).
+
 ## Appearance (Admin → Appearance)
 
 Editorial by default (warm newsprint, Fraunces + Inter, hairline rules). Five presets (Editorial, Gazette, Atelier, Noir, Modern) or customise paper/ink/accent colours, headline + body fonts (8 self-hosted fonts), layout (rules or cards), corners and density. Changes preview live across the whole dashboard and apply to both admin and customer dashboards on save. Values are schema-validated before being rendered into CSS.
@@ -78,6 +105,7 @@ curl -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
 
 | Method | Path | |
 |---|---|---|
+| GET | `/api/store/config` | `{ region, features }`: hide sign-in, discount box, etc. per plan |
 | GET | `/api/store/settings` | name, currencies, providers per currency |
 | GET | `/api/store/products?currency=&q=&category=&collection=&limit=&offset=` | KV cached |
 | GET | `/api/store/products/:handle?currency=` | |

@@ -7,6 +7,9 @@ import { user, session, account, verification, rateLimit } from "@/modules/auth/
 import { sendEmail } from "@/modules/notification/email";
 import { actionEmail } from "@/modules/notification/templates";
 import { appUrl, env, requireEnv } from "./env";
+import { APIError } from "better-auth/api";
+import { hasFeature } from "./plan";
+import { hasAdmin } from "@/modules/auth/service";
 
 function storeName() {
 	return env("STORE_NAME") ?? "Store";
@@ -31,6 +34,19 @@ function createAuth() {
 			provider: "pg",
 			schema: { user, session, account, verification, rateLimit },
 		}),
+		databaseHooks: {
+			user: {
+				create: {
+					// Starter has no customer accounts: only the very first admin (via /setup) may be created.
+					before: async (u) => {
+						if (!hasFeature("customerAccounts") && (await hasAdmin()))
+							// 400, not 403: Better Auth masks 403s on sign-up as a fake success (anti-enumeration).
+							throw new APIError("BAD_REQUEST", { message: "Customer accounts are not available on this store. You can still check out as a guest." });
+						return { data: u };
+					},
+				},
+			},
+		},
 		user: {
 			additionalFields: {
 				// input:false → can never be set by sign-up/update payloads (no privilege escalation).

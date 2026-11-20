@@ -202,6 +202,12 @@ export async function getProduct(id: string) {
 }
 export type ProductDetail = NonNullable<Awaited<ReturnType<typeof getProduct>>>;
 
+/** Total products (any status) — used for plan limits. */
+export async function countProducts() {
+	const [{ n }] = await db().select({ n: count() }).from(products);
+	return n;
+}
+
 export async function listProducts(opts: { q?: string; status?: ProductStatus; limit?: number; offset?: number } = {}) {
 	const conds = [];
 	if (opts.status) conds.push(eq(products.status, opts.status));

@@ -16,11 +16,13 @@ import { runWorkflow } from "@/lib/workflow";
 import { emit } from "@/lib/events";
 import { appUrl } from "@/lib/env";
 import { CommerceError, invalid, notAllowed, notFound } from "@/lib/errors";
+import { allowedProviders, hasFeature } from "@/lib/plan";
 
 const REUSE_WINDOW_MS = 30 * 60_000;
 
 export async function availableProviders(currency: string) {
-	return payment.usableProviders((await getSettings()).paymentProviders, currency);
+	const allowed = allowedProviders();
+	return payment.usableProviders((await getSettings()).paymentProviders.filter((p) => allowed.includes(p)), currency);
 }
 
 /**
@@ -119,7 +121,7 @@ export async function confirmPayment(providerId: PaymentProviderId, reference: s
 			promotion: promo,
 			items: lines.map((i) => ({ productId: i.productId!, variantId: i.variantId, title: i.title, variantTitle: i.variantTitle, sku: i.sku, thumbnail: i.thumbnail, unitPrice: i.unitPrice!, quantity: i.quantity })),
 		});
-		const failed = await inventory.reserveForOrder(tx, lines.map((i) => ({ variantId: i.variantId, quantity: i.quantity })), o.id);
+		const failed = !hasFeature("inventoryTracking") ? [] : await inventory.reserveForOrder(tx, lines.map((i) => ({ variantId: i.variantId, quantity: i.quantity })), o.id);
 		if (promo) await promotion.recordUsage(tx, promo.id);
 		await cartModule.markCompleted(tx, cart.id);
 		await order.addOrderEvent(tx, o.id, "order.placed", { paymentId: p.id, total: o.total });

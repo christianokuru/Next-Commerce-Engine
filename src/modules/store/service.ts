@@ -4,13 +4,20 @@ import { db } from "@/db";
 import { storeSettings } from "./schema";
 import { cached, invalidate, CacheTags } from "@/lib/cache";
 import { resolveTheme } from "./theme";
+import { REGION_PRESETS, currentRegion } from "@/lib/plan";
 
 export type StoreSettings = typeof storeSettings.$inferSelect;
 
 export async function getSettingsUncached(): Promise<StoreSettings> {
 	const [row] = await db().select().from(storeSettings).where(eq(storeSettings.id, "default"));
 	if (row) return row;
-	const [created] = await db().insert(storeSettings).values({ id: "default" }).onConflictDoNothing().returning();
+	// First run: start from the region preset (currency + payment providers). The admin can change them later.
+	const preset = REGION_PRESETS[currentRegion()];
+	const [created] = await db()
+		.insert(storeSettings)
+		.values({ id: "default", defaultCurrency: preset.currency, currencies: [preset.currency], paymentProviders: [...preset.providers] })
+		.onConflictDoNothing()
+		.returning();
 	return created ?? (await db().select().from(storeSettings).where(eq(storeSettings.id, "default")))[0];
 }
 

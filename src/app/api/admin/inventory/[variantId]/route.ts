@@ -12,4 +12,4 @@ export const POST = adminRoute<{ variantId: string }>(async (req, { params, acto
 		? await setStock(params.variantId, i.quantity, actorId(actor))
 		: await adjustStock(params.variantId, i.quantity, { reason: "restock", actorId: actorId(actor), note: i.note });
 	return { item };
-});
+}, { feature: "inventoryTracking" });

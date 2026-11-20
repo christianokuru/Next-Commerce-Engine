@@ -2,6 +2,8 @@ import { Home, Package, MapPin, User } from "lucide-react";
 import { NavShell } from "@/components/app/nav-shell";
 import { ThemeStyle } from "@/components/app/theme-style";
 import { requireCustomer } from "@/server/session";
+import { hasFeature } from "@/lib/plan";
+import { notFound } from "next/navigation";
 import { getSettings } from "@/modules/store/service";
 import { isDark, resolveTheme } from "@/modules/store/theme";
 
@@ -9,6 +11,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: { default: "My account", template: "%s · My account" } };
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
+	if (!hasFeature("customerAccounts")) notFound(); // Starter: guest checkout only
 	const [{ user }, settings] = await Promise.all([requireCustomer(), getSettings()]);
 	const theme = resolveTheme(settings.theme);
 	return (

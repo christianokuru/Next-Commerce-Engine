@@ -20,13 +20,16 @@ import { themeSchema } from "@/modules/store/theme";
 import { PAYMENT_PROVIDERS } from "@/modules/payment/schema";
 import * as catalog from "@/workflows/catalog";
 import * as orderFlows from "@/workflows/order";
+import { setStaffRole, updateStoreSettings } from "@/workflows/store";
+import { allowedProviders, requireFeature, type Feature } from "@/lib/plan";
 
 type Admin = Awaited<ReturnType<typeof assertAdmin>>;
 
 /** Every admin mutation: authz check → validate → run → revalidate. */
-async function run(fn: (admin: Admin) => Promise<string | void>, paths: string[] = []): Promise<ActionState> {
+async function run(fn: (admin: Admin) => Promise<string | void>, paths: string[] = [], feature?: Feature): Promise<ActionState> {
 	try {
 		const admin = await assertAdmin();
+		if (feature) requireFeature(feature);
 		const message = (await fn(admin)) ?? "Saved";
 		await invalidate(CacheTags.catalog); // public Store API cache
 		for (const p of paths) revalidatePath(p);
@@ -196,11 +199,11 @@ export async function createCollectionAction(_: ActionState, fd: FormData): Prom
 		const o = z.object({ title: f.text(100).min(1), description: f.optText(1000) }).parse(formObject(fd));
 		await products.createCollection(o);
 		return "Collection created";
-	}, ["/admin/collections"]);
+	}, ["/admin/collections"], "collections");
 }
 
 export async function deleteCollectionAction(_: ActionState, fd: FormData): Promise<ActionState> {
-	return run(async () => { await products.deleteCollection(z.string().parse(fd.get("id"))); return "Collection deleted"; }, ["/admin/collections"]);
+	return run(async () => { await products.deleteCollection(z.string().parse(fd.get("id"))); return "Collection deleted"; }, ["/admin/collections"], "collections");
 }
 
 // ---------- Inventory ----------
@@ -211,7 +214,7 @@ export async function adjustStockAction(_: ActionState, fd: FormData): Promise<A
 		if (o.mode === "set") await inventory.setStock(o.variantId, o.quantity, admin.id);
 		else await inventory.adjustStock(o.variantId, o.quantity, { reason: "restock", actorId: admin.id, note: o.note ?? undefined });
 		return "Stock updated";
-	}, ["/admin/inventory", "/admin/products"]);
+	}, ["/admin/inventory", "/admin/products"], "inventoryTracking");
 }
 
 // ---------- Orders ----------
@@ -271,15 +274,15 @@ export async function createPromotionAction(_: ActionState, fd: FormData): Promi
 			endsAt: date.parse(o.endsAt),
 		});
 		return "Promotion created";
-	}, ["/admin/promotions"]);
+	}, ["/admin/promotions"], "discounts");
 }
 
 export async function togglePromotionAction(_: ActionState, fd: FormData): Promise<ActionState> {
-	return run(async () => { await promos.setPromotionActive(z.string().parse(fd.get("id")), fd.get("isActive") === "true"); }, ["/admin/promotions"]);
+	return run(async () => { await promos.setPromotionActive(z.string().parse(fd.get("id")), fd.get("isActive") === "true"); }, ["/admin/promotions"], "discounts");
 }
 
 export async function deletePromotionAction(_: ActionState, fd: FormData): Promise<ActionState> {
-	return run(async () => { await promos.deletePromotion(z.string().parse(fd.get("id"))); return "Promotion deleted"; }, ["/admin/promotions"]);
+	return run(async () => { await promos.deletePromotion(z.string().parse(fd.get("id"))); return "Promotion deleted"; }, ["/admin/promotions"], "discounts");
 }
 
 // ---------- Shipping ----------
@@ -330,7 +333,7 @@ export async function updateSettingsAction(_: ActionState, fd: FormData): Promis
 		const defaultCurrency = currency.parse(o.defaultCurrency);
 		if (!currencies.includes(defaultCurrency)) currencies.unshift(defaultCurrency);
 		const rate = z.coerce.number().min(0).max(100).parse(o.taxRate || "0");
-		await updateSettings({
+		await updateStoreSettings({
 			name: f.text(100).min(1).parse(o.name),
 			supportEmail: o.supportEmail ? email.parse(o.supportEmail) : null,
 			storefrontUrl: o.storefrontUrl ? z.url().max(300).parse(o.storefrontUrl) : null,
@@ -339,7 +342,7 @@ export async function updateSettingsAction(_: ActionState, fd: FormData): Promis
 			currencies,
 			taxRateBps: Math.round(rate * 100),
 			taxInclusive: f.bool.parse(o.taxInclusive),
-			paymentProviders: PAYMENT_PROVIDERS.filter((p) => fd.get(`provider_${p}`) === "on"),
+			paymentProviders: PAYMENT_PROVIDERS.filter((p) => allowedProviders().includes(p) && fd.get(`provider_${p}`) === "on"),
 		});
 		return "Settings saved";
 	}, ["/admin/settings"]);
@@ -348,7 +351,7 @@ export async function updateSettingsAction(_: ActionState, fd: FormData): Promis
 export async function setAdminRoleAction(_: ActionState, fd: FormData): Promise<ActionState> {
 	return run(async (admin) => {
 		const o = z.object({ email, role: z.enum(["admin", "customer"]) }).parse(formObject(fd));
-		await authModule.setRole(admin.id, o.email, o.role);
+		await setStaffRole(admin.id, o.email, o.role);
 		return o.role === "admin" ? `${o.email} is now an admin` : `${o.email} is no longer an admin`;
 	}, ["/admin/settings"]);
 }
@@ -367,6 +370,7 @@ export async function saveThemeAction(theme: unknown): Promise<ActionState> {
 export async function createApiKeyAction(_: ActionState, fd: FormData): Promise<ActionState> {
 	try {
 		const admin = await assertAdmin();
+		requireFeature("apiKeys");
 		const name = f.text(80).min(1, "Name is required").parse(fd.get("name") ?? "");
 		const { key } = await authModule.createApiKey(name, admin.id);
 		revalidatePath("/admin/settings");

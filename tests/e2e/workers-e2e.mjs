@@ -1,5 +1,6 @@
 /**
  * End-to-end smoke test against the BUILT worker running in workerd (`npm run preview` / wrangler dev).
+ * Covers every feature: run the worker with PLAN=advanced (e.g. in .dev.vars).
  * Usage: BASE=http://localhost:8787 SETUP_TOKEN=... PAYSTACK_SECRET_KEY=... WRANGLER_LOG=path node tests/e2e/workers-e2e.mjs
  */
 import { createRequire } from "node:module";
@@ -41,7 +42,7 @@ await page.goto(`${BASE}/sign-in`);
 await page.fill("#email", admin.email);
 await page.fill("#password", admin.password);
 await page.click("button[type=submit]");
-await page.waitForURL(/\/admin$/, { timeout: 30000 });
+await page.waitForURL((u) => u.pathname === "/admin", { timeout: 30000 });
 await page.getByRole("heading", { name: "Latest orders" }).waitFor({ timeout: 15000 });
 ok(true, "admin dashboard renders (mobile viewport)");
 await page.screenshot({ path: `${shots}/admin-overview-mobile.png`, fullPage: true });

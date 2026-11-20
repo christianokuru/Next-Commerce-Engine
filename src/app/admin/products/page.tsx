@@ -6,6 +6,8 @@ import { PageHeader, StatusBadge, EmptyState, Pagination, Plate, FilterBar } fro
 import { listProductsWithStock } from "@/queries/admin";
 import type { ProductStatus } from "@/modules/product/service";
 import { imageUrl } from "@/modules/media/service";
+import { countProducts } from "@/modules/product/service";
+import { currentPlan, limits, planName } from "@/lib/plan";
 
 export const metadata = { title: "Products" };
 const LIMIT = 20;
@@ -14,10 +16,20 @@ export default async function Products({ searchParams }: { searchParams: Promise
 	const sp = await searchParams;
 	const status = ["draft", "published", "archived"].includes(sp.status ?? "") ? (sp.status as ProductStatus) : undefined;
 	const offset = Math.max(0, Number(sp.offset) || 0);
-	const { products, count } = await listProductsWithStock({ q: sp.q?.slice(0, 100), status, limit: LIMIT, offset });
+	const [{ products, count }, total] = await Promise.all([listProductsWithStock({ q: sp.q?.slice(0, 100), status, limit: LIMIT, offset }), countProducts()]);
+	const max = limits().products;
+	const capped = Number.isFinite(max);
+	const full = capped && total >= max;
 	return (
 		<>
-			<PageHeader eyebrow="Catalogue" title="Products" description={`${count} products in the catalogue.`} actions={<Link href="/admin/products/new" className={buttonVariants({ className: "h-10" })}><Plus /> New product</Link>} />
+			<PageHeader
+				eyebrow="Catalogue"
+				title="Products"
+				description={capped ? `${total} of ${max} products used on your ${planName(currentPlan())} plan.${full ? " Upgrade to Standard for unlimited products." : ""}` : `${count} products in the catalogue.`}
+				actions={full
+					? <Link href="/admin/settings#plan" className={buttonVariants({ variant: "outline", className: "h-10" })}>Product limit reached</Link>
+					: <Link href="/admin/products/new" className={buttonVariants({ className: "h-10" })}><Plus /> New product</Link>}
+			/>
 			<FilterBar>
 				<Input name="q" defaultValue={sp.q} placeholder="Search products" />
 				<select name="status" defaultValue={status ?? ""} className="rounded-lg border border-input bg-transparent px-2 text-sm sm:w-40">

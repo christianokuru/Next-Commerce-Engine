@@ -6,9 +6,11 @@ import { getSettings } from "@/modules/store/service";
 import { currency } from "@/lib/validators";
 import type { CartWithTotals } from "@/workflows/cart";
 import { CommerceError } from "@/lib/errors";
+import { hasFeature, requireFeature } from "@/lib/plan";
 
 /** Resolve the customer from a session cookie, if present (same-site or credentialed CORS). */
 export async function optionalCustomer(req: Request) {
+	if (!hasFeature("customerAccounts")) return null; // Starter: guest checkout only
 	const s = await auth().api.getSession({ headers: req.headers }).catch(() => null);
 	if (!s) return null;
 	return getCustomerForUser(s.user);
@@ -16,6 +18,7 @@ export async function optionalCustomer(req: Request) {
 
 /** Signed-in customer (session cookie or `Authorization: Bearer <token>`), or 401. */
 export async function requireStoreCustomer(req: Request) {
+	requireFeature("customerAccounts");
 	const c = await optionalCustomer(req);
 	if (!c) throw new CommerceError("unauthorized", "Sign in with a verified email to access your account");
 	return c;

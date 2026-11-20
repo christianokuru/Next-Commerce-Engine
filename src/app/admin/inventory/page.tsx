@@ -4,10 +4,13 @@ import { ActionForm, SubmitButton } from "@/components/app/action-form";
 import { PageHeader, EmptyState } from "@/components/app/ui-bits";
 import { listInventory } from "@/queries/admin";
 import { adjustStockAction } from "../actions";
+import { hasFeature } from "@/lib/plan";
+import { PlanLocked } from "@/components/app/plan";
 
 export const metadata = { title: "Inventory" };
 
 export default async function Inventory({ searchParams }: { searchParams: Promise<{ low?: string }> }) {
+	if (!hasFeature("inventoryTracking")) return <PlanLocked feature="inventoryTracking" eyebrow="Catalogue" title="Inventory" />;
 	const low = (await searchParams).low === "1";
 	const rows = await listInventory({ lowStockOnly: low });
 	return (

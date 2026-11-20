@@ -1,6 +1,7 @@
 /** Public catalog reads for the Store API: product module + stock availability from inventory. */
 import * as product from "@/modules/product/service";
 import * as inventory from "@/modules/inventory/service";
+import { hasFeature } from "@/lib/plan";
 
 type Items = Awaited<ReturnType<typeof inventory.getItems>>;
 
@@ -16,7 +17,7 @@ function toStoreProduct(p: product.CatalogProduct, currency: string, items: Item
 			return {
 				id: v.id, title: v.title, sku: v.sku, options: v.options,
 				price: price ? { amount: price.amount, compareAtAmount: price.compareAtAmount, currencyCode: cur } : null,
-				inStock: inventory.isSellable(items.get(v.id)),
+				inStock: !hasFeature("inventoryTracking") || inventory.isSellable(items.get(v.id)),
 			};
 		}),
 	};

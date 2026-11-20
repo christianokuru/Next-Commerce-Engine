@@ -7,10 +7,13 @@ import { Money, PageHeader, EmptyState, dateOnly } from "@/components/app/ui-bit
 import { listPromotions } from "@/modules/promotion/service";
 import { getSettings } from "@/modules/store/service";
 import { createPromotionAction, deletePromotionAction, togglePromotionAction } from "../actions";
+import { hasFeature } from "@/lib/plan";
+import { PlanLocked } from "@/components/app/plan";
 
 export const metadata = { title: "Promotions" };
 
 export default async function Promotions() {
+	if (!hasFeature("discounts")) return <PlanLocked feature="discounts" eyebrow="Marketing" title="Promotions" />;
 	const [promos, settings] = await Promise.all([listPromotions(), getSettings()]);
 	return (
 		<>

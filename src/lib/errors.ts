@@ -7,6 +7,7 @@ export type ErrorCode =
 	| "not_allowed"
 	| "payment_error"
 	| "rate_limited"
+	| "plan_required"
 	| "unexpected";
 
 const STATUS: Record<ErrorCode, number> = {
@@ -18,6 +19,7 @@ const STATUS: Record<ErrorCode, number> = {
 	not_allowed: 422,
 	payment_error: 402,
 	rate_limited: 429,
+	plan_required: 403,
 	unexpected: 500,
 };
 

@@ -2,11 +2,14 @@
 
 Working list. Tick items as they ship; delete this file once we're satisfied. ★ = high impact.
 
+**Tier map (sold one-time):** Starter ~90% ready · Standard ★ ready · Advanced needs multi-currency polish, delivery, reviews, analytics, advanced promotions · Multi-vendor is a new module.
+
 **Suggested build order:** 1. Storefront starter + SDK → 2. WhatsApp/SMS notifications → 3. Bank transfer/USSD + order tracking → 4. Staff roles → 5. Better promotions + abandoned carts.
 
 ## Developer (building client stores)
 
-- [ ] ★ **Storefront starter + typed SDK** — ready Next.js storefront kit (PWA, mobile-first) on the Store API, plus a tiny typed client (`sdk.cart.add()` etc.). New client = clone, rebrand, deploy.
+- [x] ★ **Tiers & region presets** — `PLAN` (starter/standard/advanced/multivendor) + `REGION` (africa/international); server-enforced gates, upgrade screens, Plan card, client Guide (Admin → Guide, `docs/FEATURES.md`).
+- [ ] ★ **Storefront SDK + skeleton** — each client gets a custom storefront; a typed client (`sdk.cart.add()` etc.) and a minimal PWA, mobile-first skeleton (cart, checkout, account wired to `/api/store/config`) make every custom build faster.
 - [ ] ★ **One-command deploy** — `npm run setup:cloudflare`: interactively creates Neon DB, KV, R2 and secrets. New client live in ~10 minutes.
 - [ ] **Demo data** — `npm run seed` for sample products/orders (client demos).
 - [ ] **Outgoing webhooks** — notify Zapier, Slack, ERPs on order placed/shipped/refunded.

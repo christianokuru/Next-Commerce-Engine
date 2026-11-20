@@ -38,12 +38,12 @@ function Submit({ busy, children }: { busy: boolean; children: React.ReactNode }
 	);
 }
 
-export function SignInForm({ google }: { google: boolean }) {
+export function SignInForm({ google, signUp = true }: { google: boolean; signUp?: boolean }) {
 	const router = useRouter();
 	const next = safeNext(useSearchParams().get("next"));
 	const [busy, setBusy] = useState(false);
 	return (
-		<Shell title="Sign in" description="Welcome back" footer={<>No account? <Link className="underline" href="/sign-up">Create one</Link></>}>
+		<Shell title="Sign in" description={signUp ? "Welcome back" : "Staff sign in"} footer={signUp ? <>No account? <Link className="underline" href="/sign-up">Create one</Link></> : undefined}>
 			<form
 				className="space-y-4"
 				onSubmit={async (e) => {

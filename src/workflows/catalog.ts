@@ -3,11 +3,19 @@ import { transaction } from "@/db";
 import * as product from "@/modules/product/service";
 import * as inventory from "@/modules/inventory/service";
 import { deleteImage } from "@/modules/media/service";
+import { currentPlan, hasFeature, limits, planName } from "@/lib/plan";
+import { CommerceError } from "@/lib/errors";
 
 export type NewVariant = product.VariantInput & inventory.ItemSettings & { stock?: number };
 
+/** Starter: variants are created untracked (always available). */
+const untracked = (v: NewVariant): NewVariant => (hasFeature("inventoryTracking") ? v : { ...v, manageInventory: false, stock: undefined });
+
 export async function createProduct(input: Omit<product.ProductInput, "variants"> & { variants?: NewVariant[] }) {
-	const variants = input.variants ?? [];
+	const max = limits().products;
+	if (Number.isFinite(max) && (await product.countProducts()) >= max)
+		throw new CommerceError("plan_required", `Your ${planName(currentPlan())} plan includes up to ${max} products. Upgrade to Standard for unlimited products.`, { limit: "products" });
+	const variants = (input.variants ?? []).map(untracked);
 	return transaction(async (tx) => {
 		const { id, variantIds } = await product.createProduct({ ...input, variants }, tx);
 		await inventory.createItems(variantIds.map((variantId, i) => ({ variantId, ...variants[i] })), tx);
@@ -15,7 +23,8 @@ export async function createProduct(input: Omit<product.ProductInput, "variants"
 	});
 }
 
-export async function addVariant(productId: string, v: NewVariant) {
+export async function addVariant(productId: string, input: NewVariant) {
+	const v = untracked(input);
 	return transaction(async (tx) => {
 		const variantId = await product.addVariant(productId, v, tx);
 		await inventory.createItems([{ variantId, ...v }], tx);
@@ -24,6 +33,7 @@ export async function addVariant(productId: string, v: NewVariant) {
 }
 
 export async function updateVariant(variantId: string, v: Partial<product.VariantInput> & inventory.ItemSettings & { stock?: number | null }, actorId?: string) {
+	if (!hasFeature("inventoryTracking")) v = { ...v, manageInventory: undefined, allowBackorder: undefined, lowStockThreshold: undefined, stock: undefined };
 	await transaction(async (tx) => {
 		await product.updateVariant(variantId, v, tx);
 		if (v.manageInventory !== undefined || v.allowBackorder !== undefined || v.lowStockThreshold !== undefined)

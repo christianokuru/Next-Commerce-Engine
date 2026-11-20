@@ -37,6 +37,12 @@
 	// Workers Rate Limiting: Store API abuse protection (checkout, cart creation, uploads).
 	"ratelimits": [{ "name": "RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 60, "period": 60 } }],
 	"vars": {
+		// Tier sold to this client: starter | standard | advanced | multivendor (see src/lib/plan.ts).
+		"PLAN": "standard",
+		// africa → NGN + Paystack/Flutterwave · international → USD + Stripe. Override providers with ALLOWED_PAYMENT_PROVIDERS.
+		"REGION": "africa",
+		// Shown on locked features: your email, WhatsApp number or website.
+		"UPGRADE_CONTACT": "",
 		"APP_URL": "https://next-commerce-engine.example.workers.dev",
 		"STORE_NAME": "My Store",
 		"EMAIL_FROM": "My Store <orders@example.com>",

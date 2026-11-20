@@ -12,6 +12,7 @@ import { getSettings } from "@/modules/store/service";
 import { calculateTotals, promotionError, type Totals } from "@/modules/pricing/totals";
 import type { Address } from "@/lib/address";
 import { invalid, notAllowed, notFound } from "@/lib/errors";
+import { hasFeature, requireFeature } from "@/lib/plan";
 
 const { MAX_LINE_QUANTITY, MAX_LINES } = cartModule;
 export type Cart = cartModule.Cart;
@@ -51,7 +52,7 @@ export async function retrieveCart(id: string, d?: Db): Promise<CartWithTotals> 
 
 	const [so, promo] = await Promise.all([
 		cart.shippingOptionId ? shipping.getOption(cart.shippingOptionId, d) : null,
-		cart.promotionId ? promotion.getPromotion(cart.promotionId, d) : null,
+		cart.promotionId && hasFeature("discounts") ? promotion.getPromotion(cart.promotionId, d) : null,
 	]);
 	const totals = calculateTotals({
 		currency: cart.currencyCode,
@@ -69,6 +70,7 @@ export async function retrieveCart(id: string, d?: Db): Promise<CartWithTotals> 
 }
 
 async function assertStock(variantId: string, quantity: number) {
+	if (!hasFeature("inventoryTracking")) return; // Starter: no stock tracking, items are always available
 	if ((await inventory.findUnavailable([{ variantId, quantity }])).length) throw notAllowed("Not enough stock for this item");
 }
 
@@ -132,6 +134,7 @@ export async function setShippingOption(cartId: string, optionId: string) {
 }
 
 export async function applyPromotion(cartId: string, code: string) {
+	requireFeature("discounts");
 	await cartModule.getOpenCart(cartId);
 	const promo = await promotion.findByCode(code);
 	if (!promo) throw notAllowed("Invalid promotion code");
@@ -158,7 +161,7 @@ export async function assertCheckoutReady(cart: CartWithTotals, d?: Db) {
 	if (!cart.shippingOption && (await shipping.optionsFor(cart.shippingAddress.countryCode, cart.currencyCode, d)).length)
 		throw notAllowed("Select a shipping method");
 	if (cart.promotion && cart.totals.promotionError) throw notAllowed(cart.totals.promotionError);
-	if ((await inventory.findUnavailable(cart.items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })), d)).length)
+	if (hasFeature("inventoryTracking") && (await inventory.findUnavailable(cart.items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })), d)).length)
 		throw notAllowed("Some items are out of stock");
 	if (cart.totals.total <= 0) throw notAllowed("Order total must be greater than zero");
 }

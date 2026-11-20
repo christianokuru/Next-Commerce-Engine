@@ -42,7 +42,7 @@ await signIn(p, admin.email, "wrong-password");
 await p.locator("[data-sonner-toast]").first().waitFor({ timeout: 15000 });
 ok(p.url().includes("/sign-in"), "wrong password rejected");
 await signIn(p, admin.email, admin.password);
-await p.waitForURL(/\/admin$/, { timeout: 30000 });
+await p.waitForURL((u) => u.pathname === "/admin", { timeout: 30000 });
 ok(true, "admin signs in → /admin");
 
 // --- Anonymous access control

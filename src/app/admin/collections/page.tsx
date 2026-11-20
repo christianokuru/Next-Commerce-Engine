@@ -6,10 +6,13 @@ import { Field } from "@/components/app/field";
 import { PageHeader, EmptyState } from "@/components/app/ui-bits";
 import { listCollections } from "@/modules/product/service";
 import { createCollectionAction, deleteCollectionAction } from "../actions";
+import { hasFeature } from "@/lib/plan";
+import { PlanLocked } from "@/components/app/plan";
 
 export const metadata = { title: "Collections" };
 
 export default async function Collections() {
+	if (!hasFeature("collections")) return <PlanLocked feature="collections" eyebrow="Catalogue" title="Collections" />;
 	const cols = await listCollections();
 	return (
 		<>

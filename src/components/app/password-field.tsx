@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import { Eye, EyeOff, Check } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ type Props = {
 } & Omit<React.ComponentProps<"input">, "name" | "type" | "minLength">;
 
 export function PasswordField({ label, name, minLength = 8, meter, className, ...input }: Props) {
-	const id = useId();
+	const id = input.id ?? name; // same convention as <Field>: id = name
 	const [show, setShow] = useState(false);
 	const [value, setValue] = useState("");
 	const score = passwordScore(value, minLength);

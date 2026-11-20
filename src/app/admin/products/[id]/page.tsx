@@ -17,10 +17,12 @@ import {
 } from "../../actions";
 import { ProductFields } from "../product-fields";
 import { ImageUploader } from "../image-uploader";
+import { hasFeature } from "@/lib/plan";
 
 export const metadata = { title: "Edit product" };
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+	const tracking = hasFeature("inventoryTracking");
 	const { id } = await params;
 	const [product, categories, collections, settings] = await Promise.all([getProductDetail(id), listCategories(), listCollections(), getSettings()]);
 	if (!product) notFound();
@@ -59,7 +61,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 									<summary className="flex cursor-pointer list-none items-center justify-between gap-3 py-3">
 										<div className="min-w-0">
 											<p className="truncate font-medium">{v.title}</p>
-											<p className="text-xs text-muted-foreground">{v.sku ?? "No SKU"} · {(v.inventory?.manageInventory ?? true) ? `${v.inventory?.stockedQuantity ?? 0} in stock` : "Not tracked"}</p>
+											<p className="text-xs text-muted-foreground">{v.sku ?? "No SKU"} · {(v.inventory?.manageInventory ?? true) && tracking ? `${v.inventory?.stockedQuantity ?? 0} in stock` : "Always available"}</p>
 										</div>
 										<div className="text-right text-sm">
 											{priceOf(v, settings.defaultCurrency) ? <Money amount={priceOf(v, settings.defaultCurrency)!.amount} currency={settings.defaultCurrency} /> : <span className="text-destructive">No price</span>}
@@ -71,7 +73,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 											<div className="grid gap-3 sm:grid-cols-3">
 												<Field label="Title" name="title" defaultValue={v.title} required />
 												<Field label="SKU" name="sku" defaultValue={v.sku ?? ""} />
-												<Field label="Stock" name="stock" type="number" min={0} defaultValue={v.inventory?.stockedQuantity ?? 0} />
+												{tracking && <Field label="Stock" name="stock" type="number" min={0} defaultValue={v.inventory?.stockedQuantity ?? 0} />}
 											</div>
 											<div className="grid gap-3 sm:grid-cols-2">
 												{settings.currencies.map((c) => (
@@ -81,10 +83,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 													</div>
 												))}
 											</div>
-											<div className="flex flex-wrap gap-4">
-												<CheckboxField label="Track inventory" name="manageInventory" defaultChecked={v.inventory?.manageInventory ?? true} />
-												<CheckboxField label="Allow backorders" name="allowBackorder" defaultChecked={v.inventory?.allowBackorder ?? false} />
-											</div>
+											{tracking && (
+												<div className="flex flex-wrap gap-4">
+													<CheckboxField label="Track inventory" name="manageInventory" defaultChecked={v.inventory?.manageInventory ?? true} />
+													<CheckboxField label="Allow backorders" name="allowBackorder" defaultChecked={v.inventory?.allowBackorder ?? false} />
+												</div>
+											)}
 											<SubmitButton size="sm">Save variant</SubmitButton>
 										</ActionForm>
 										<ActionForm action={deleteVariantAction} confirm="Delete this variant?" className="mt-3">
@@ -115,15 +119,17 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 										<div className="grid gap-3 sm:grid-cols-3">
 											<Field label="Title" name="title" placeholder="Auto from options" />
 											<Field label="SKU" name="sku" />
-											<Field label="Stock" name="stock" type="number" min={0} defaultValue={0} />
+											{tracking && <Field label="Stock" name="stock" type="number" min={0} defaultValue={0} />}
 										</div>
 										<div className="grid gap-3 sm:grid-cols-3">
 											{settings.currencies.map((c) => <Field key={c} label={`Price ${c}`} name={`price_${c}`} inputMode="decimal" required={c === settings.defaultCurrency} />)}
 										</div>
-										<div className="flex flex-wrap gap-4">
-											<CheckboxField label="Track inventory" name="manageInventory" defaultChecked />
-											<CheckboxField label="Allow backorders" name="allowBackorder" />
-										</div>
+										{tracking && (
+											<div className="flex flex-wrap gap-4">
+												<CheckboxField label="Track inventory" name="manageInventory" defaultChecked />
+												<CheckboxField label="Allow backorders" name="allowBackorder" />
+											</div>
+										)}
 										<SubmitButton size="sm">Add variant</SubmitButton>
 									</ActionForm>
 								</div>

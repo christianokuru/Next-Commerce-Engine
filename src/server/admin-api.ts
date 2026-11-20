@@ -6,6 +6,7 @@ import { invalidate, CacheTags } from "@/lib/cache";
 import { appUrl } from "@/lib/env";
 import { CommerceError } from "@/lib/errors";
 import { errorResponse, json } from "@/lib/http";
+import { requireFeature, type Feature } from "@/lib/plan";
 
 export type AdminActor = { type: "user"; id: string } | { type: "api_key"; id: string; createdBy: string };
 
@@ -19,6 +20,7 @@ export async function authenticateAdmin(req: Request): Promise<AdminActor> {
 	const authz = req.headers.get("authorization") ?? "";
 	const token = authz.toLowerCase().startsWith("bearer ") ? authz.slice(7).trim() : "";
 	if (token && looksLikeApiKey(token)) {
+		requireFeature("apiKeys");
 		const key = await verifyApiKey(token);
 		if (!key) throw new CommerceError("unauthorized", "Invalid or revoked API key");
 		return { type: "api_key", id: key.id, createdBy: key.createdBy };
@@ -38,11 +40,12 @@ export const actorId = (a: AdminActor) => (a.type === "user" ? a.id : `api_key:$
 type Handler<P> = (req: Request, ctx: { params: P; actor: AdminActor }) => Promise<Response | unknown>;
 
 /** Admin route wrapper: auth → handler → JSON; invalidates public caches after successful mutations. */
-export function adminRoute<P = Record<string, string>>(fn: Handler<P>, opts: { sessionOnly?: boolean } = {}) {
+export function adminRoute<P = Record<string, string>>(fn: Handler<P>, opts: { sessionOnly?: boolean; feature?: Feature } = {}) {
 	return async (req: Request, ctx: { params: Promise<P> }) => {
 		try {
 			const actor = await authenticateAdmin(req);
 			if (opts.sessionOnly && actor.type !== "user") throw new CommerceError("forbidden", "This endpoint requires a signed-in admin");
+			if (opts.feature) requireFeature(opts.feature);
 			const out = await fn(req, { params: await ctx.params, actor });
 			if (req.method !== "GET") await invalidate(CacheTags.catalog);
 			if (out instanceof Response) return out;

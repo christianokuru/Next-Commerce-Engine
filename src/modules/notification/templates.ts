@@ -30,7 +30,8 @@ type OrderForEmail = {
 	shippingAddress: { firstName: string; lastName: string; address1: string; city: string; countryCode: string } | null;
 };
 
-export function orderConfirmationEmail(store: string, o: OrderForEmail, accountUrl: string) {
+/** accountUrl is null when the store has no customer accounts (guest checkout only). */
+export function orderConfirmationEmail(store: string, o: OrderForEmail, accountUrl: string | null) {
 	const m = (n: number) => esc(formatMoney(n, o.currencyCode));
 	const rows = o.items
 		.map((i) => `<tr><td style="padding:6px 0">${esc(i.title)}${i.variantTitle && i.variantTitle !== "Default" ? ` <span style="color:#666">(${esc(i.variantTitle)})</span>` : ""} × ${i.quantity}</td><td align="right">${m(i.total)}</td></tr>`)
@@ -47,7 +48,7 @@ ${o.taxTotal ? line(o.taxInclusive ? "Tax (included)" : "Tax", m(o.taxTotal)) : 
 <tr><td style="padding-top:8px;font-weight:600">Total</td><td align="right" style="padding-top:8px;font-weight:600">${m(o.total)}</td></tr>
 </table>
 ${a ? `<p style="margin-top:16px"><strong>Shipping to</strong><br>${esc(a.firstName)} ${esc(a.lastName)}<br>${esc(a.address1)}, ${esc(a.city)}, ${esc(a.countryCode)}</p>` : ""}
-${button(accountUrl, "View your order")}`;
+${accountUrl ? button(accountUrl, "View your order") : ""}`;
 	return { subject: `Order #${o.displayId} confirmed — ${store}`, html: layout(store, `Order #${o.displayId} confirmed`, body) };
 }
 
@@ -58,10 +59,10 @@ export function adminNewOrderEmail(store: string, o: { displayId: number; email:
 	};
 }
 
-export function shippedEmail(store: string, o: { displayId: number; trackingNumber: string | null; carrier: string | null }, url: string) {
+export function shippedEmail(store: string, o: { displayId: number; trackingNumber: string | null; carrier: string | null }, url: string | null) {
 	const tracking = o.trackingNumber ? `<p>Tracking: <strong>${esc(o.carrier ?? "")} ${esc(o.trackingNumber)}</strong></p>` : "";
 	return {
 		subject: `Order #${o.displayId} has shipped — ${store}`,
-		html: layout(store, `Your order is on its way`, `<p>Order #${o.displayId} has shipped.</p>${tracking}${button(url, "View order")}`),
+		html: layout(store, `Your order is on its way`, `<p>Order #${o.displayId} has shipped.</p>${tracking}${url ? button(url, "View order") : ""}`),
 	};
 }

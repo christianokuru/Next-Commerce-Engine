@@ -1,4 +1,5 @@
-import { LayoutDashboard, Package, FolderTree, Layers, Boxes, ShoppingCart, Users, TicketPercent, Truck, Settings, Palette } from "lucide-react";
+import { LayoutDashboard, Package, FolderTree, Layers, Boxes, ShoppingCart, Users, TicketPercent, Truck, Settings, Palette, BookOpen } from "lucide-react";
+import { hasFeature } from "@/lib/plan";
 import { NavShell } from "@/components/app/nav-shell";
 import { ThemeStyle } from "@/components/app/theme-style";
 import { requireAdmin } from "@/server/session";
@@ -25,14 +26,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 					{ href: "/admin", label: "Overview", icon: <LayoutDashboard />, exact: true },
 					{ href: "/admin/orders", label: "Orders", icon: <ShoppingCart /> },
 					{ href: "/admin/products", label: "Products", icon: <Package /> },
-					{ href: "/admin/inventory", label: "Inventory", icon: <Boxes /> },
+					{ href: "/admin/inventory", label: "Inventory", icon: <Boxes />, locked: !hasFeature("inventoryTracking") },
 					{ href: "/admin/categories", label: "Categories", icon: <FolderTree /> },
-					{ href: "/admin/collections", label: "Collections", icon: <Layers /> },
+					{ href: "/admin/collections", label: "Collections", icon: <Layers />, locked: !hasFeature("collections") },
 					{ href: "/admin/customers", label: "Customers", icon: <Users /> },
-					{ href: "/admin/promotions", label: "Promotions", icon: <TicketPercent /> },
+					{ href: "/admin/promotions", label: "Promotions", icon: <TicketPercent />, locked: !hasFeature("discounts") },
 					{ href: "/admin/shipping", label: "Shipping", icon: <Truck /> },
 					{ href: "/admin/appearance", label: "Appearance", icon: <Palette /> },
 					{ href: "/admin/settings", label: "Settings", icon: <Settings /> },
+					{ href: "/admin/guide", label: "Guide", icon: <BookOpen /> },
 				]}
 			>
 				{children}

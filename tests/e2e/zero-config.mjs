@@ -22,7 +22,7 @@ if (setup.status() === 200) {
 } else await p.goto(`${BASE}/sign-in`);
 await p.fill("#email", admin.email); await p.fill("#password", admin.password);
 await p.click("button[type=submit]");
-await p.waitForURL(/\/admin$/, { timeout: 60000 });
+await p.waitForURL((u) => u.pathname === "/admin", { timeout: 60000 });
 ok(true, "admin created and signed in (embedded Postgres)");
 
 // Appearance: switch preset, save, confirm persisted CSS variables

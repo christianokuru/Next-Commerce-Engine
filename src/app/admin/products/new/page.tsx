@@ -6,10 +6,12 @@ import { listCategories, listCollections } from "@/modules/product/service";
 import { getSettings } from "@/modules/store/service";
 import { createProductAction } from "../../actions";
 import { ProductFields } from "../product-fields";
+import { hasFeature } from "@/lib/plan";
 
 export const metadata = { title: "New product" };
 
 export default async function NewProduct() {
+	const tracking = hasFeature("inventoryTracking");
 	const [categories, collections, settings] = await Promise.all([listCategories(), listCollections(), getSettings()]);
 	return (
 		<>
@@ -19,13 +21,13 @@ export default async function NewProduct() {
 					<CardContent className="space-y-4"><ProductFields categories={categories} collections={collections} /></CardContent>
 				</Card>
 				<Card className="h-fit">
-					<CardHeader><CardTitle>Pricing & stock</CardTitle></CardHeader>
+					<CardHeader><CardTitle>{tracking ? "Pricing & stock" : "Pricing"}</CardTitle></CardHeader>
 					<CardContent className="space-y-4">
 						{settings.currencies.map((c) => (
 							<Field key={c} label={`Price (${c})`} name={`price_${c}`} inputMode="decimal" placeholder="0.00" required={c === settings.defaultCurrency} />
 						))}
 						<Field label="SKU" name="sku" maxLength={64} />
-						<Field label="Stock" name="stock" type="number" min={0} defaultValue={0} />
+						{tracking && <Field label="Stock" name="stock" type="number" min={0} defaultValue={0} />}
 						<SubmitButton className="w-full">Create product</SubmitButton>
 					</CardContent>
 				</Card>
