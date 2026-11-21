@@ -1,0 +1,52 @@
+// Staging deployment on okuruchristian.workers.dev (your own test store, not for clients). Copy this per client: change name, URLs, PLAN, REGION.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "next-commerce-engine",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
+  "images": {
+    "binding": "IMAGES"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "next-commerce-engine"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    }
+  ],
+  "vars": {
+    "PLAN": "advanced",
+    "REGION": "africa",
+    "APP_URL": "https://next-commerce-engine.okuruchristian.workers.dev",
+    "STORE_NAME": "Adire House (test)",
+    "EMAIL_FROM": "Adire House <orders@example.com>",
+    "STORE_CORS": "https://storefront-starter.okuruchristian.workers.dev",
+    "ALLOWED_PAYMENT_PROVIDERS": "paystack,flutterwave,stripe"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "account_id": "2306708815a16ac56f52868ea5c8d14e"
+}
